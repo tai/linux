@@ -131,6 +131,13 @@ config SATA_MV
 
 	  If unsure, say N.
 
+config SATA_CNC
+	tristate "Cavium Celestial SATA support"
+	help
+	  This option enables support for the Celestial Serial ATA.
+
+	  If unsure, say N.
+
 config SATA_NV
 	tristate "NVIDIA SATA support"
 	depends on PCI

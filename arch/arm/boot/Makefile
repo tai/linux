@@ -80,6 +80,7 @@ endif
 $(obj)/uImage:	$(obj)/zImage FORCE
 	$(call if_changed,uimage)
 	@echo '  Image $@ is ready'
+	@if [ -n "$(TFTPT)" ]; then cp -v $@ $(TFTPT); fi
 
 $(obj)/bootp/bootp: $(obj)/zImage initrd FORCE
 	$(Q)$(MAKE) $(build)=$(obj)/bootp $@

@@ -153,7 +153,6 @@ static int ohci_urb_enqueue (
 #ifdef OHCI_VERBOSE_DEBUG
 	urb_print(urb, "SUB", usb_pipein(pipe), -EINPROGRESS);
 #endif
-
 	/* every endpoint has a ed, locate and maybe (re)initialize it */
 	if (! (ed = ed_get (ohci, urb->ep, urb->dev, pipe, urb->interval)))
 		return -ENOMEM;
@@ -391,6 +390,7 @@ static void ohci_usb_reset (struct ohci_hcd *ohci)
  * other cases where the next software may expect clean state from the
  * "firmware".  this is bus-neutral, unlike shutdown() methods.
  */
+
 static void
 ohci_shutdown (struct usb_hcd *hcd)
 {
@@ -398,10 +398,18 @@ ohci_shutdown (struct usb_hcd *hcd)
 
 	ohci = hcd_to_ohci (hcd);
 	ohci_writel (ohci, OHCI_INTR_MIE, &ohci->regs->intrdisable);
-	ohci_usb_reset (ohci);
+	ohci->hc_control = ohci_readl(ohci, &ohci->regs->control);
+
+	/* If the SHUTDOWN quirk is set, don't put the controller in RESET */
+	ohci->hc_control &= (ohci->flags & OHCI_QUIRK_SHUTDOWN ?
+			OHCI_CTRL_RWC | OHCI_CTRL_HCFS :
+			OHCI_CTRL_RWC);
+	ohci_writel(ohci, ohci->hc_control, &ohci->regs->control);
+
 	/* flush the writes */
 	(void) ohci_readl (ohci, &ohci->regs->control);
 }
+
 
 static int check_ed(struct ohci_hcd *ohci, struct ed *ed)
 {
@@ -1004,6 +1012,11 @@ MODULE_LICENSE ("GPL");
 #if defined(CONFIG_ARCH_S3C2410) || defined(CONFIG_ARCH_S3C64XX)
 #include "ohci-s3c2410.c"
 #define PLATFORM_DRIVER		ohci_hcd_s3c2410_driver
+#endif
+
+#ifdef CONFIG_USB_CNC18XX_OHCI
+#include "ohci-cnc18xx.c"
+#define PLATFORM_DRIVER		ohci_hcd_cnc18xx_driver
 #endif
 
 #ifdef CONFIG_ARCH_OMAP

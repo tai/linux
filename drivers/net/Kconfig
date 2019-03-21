@@ -928,6 +928,17 @@ config TI_DAVINCI_EMAC
 	  To compile this driver as a module, choose M here: the module
 	  will be called davinci_emac_driver.  This is recommended.
 
+config CN100_MAC
+	tristate "Celestial CN100 MAC Support"
+	depends on ARM && ARCH_CELESTIAL
+	select CRC32
+	select MII
+	help
+	  This driver supports Cavium's Celestial CNC18xx platform Ethernet.
+
+	  To compile this driver as a module, choose M here: the module
+	  will be called celestial mac_driver.  This is recommended.
+
 config DM9000
 	tristate "DM9000 support"
 	depends on ARM || BLACKFIN || MIPS

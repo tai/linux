@@ -315,6 +315,19 @@ config ARCH_MXC
 	help
 	  Support for Freescale MXC/iMX-based family of processors
 
+
+config ARCH_CELESTIAL
+	bool "Cavium celestial platform"
+	select HAVE_CLK
+	select GENERIC_TIME
+	select GENERIC_CLOCKEVENTS
+	select COMMON_CLKDEV
+	select TICK_ONESHOT
+	select ZONE_DMA
+	help
+	  Support for Cavium's Celestial SoC chip.
+
+
 config ARCH_STMP3XXX
 	bool "Freescale STMP3xxx"
 	select CPU_ARM926T
@@ -704,6 +717,8 @@ config ARCH_BCMRING
 
 endchoice
 
+source "arch/arm/mach-celestial/Kconfig"
+
 source "arch/arm/mach-clps711x/Kconfig"
 
 source "arch/arm/mach-ep93xx/Kconfig"
@@ -887,14 +902,27 @@ config ARM_ERRATA_460075
 	  ACTLR register. Note that setting specific bits in the ACTLR register
 	  may not be available in non-secure mode.
 
+config ARM_ERRATA_720789
+	bool "ARM errata: TLBIASIDIS and TLBIMVAIS operations can broadcast a faulty ASID"
+	depends on CPU_V7 && SMP
+	help
+	  This option enables the workaround for the 720789 Cortex-A9 (prior to
+	  r2p0) erratum. A faulty ASID can be sent to the other CPUs for the
+	  broadcasted CP15 TLB maintenance operations TLBIASIDIS and TLBIMVAIS.
+	  As a consequence of this erratum, some TLB entries which should be
+	  invalidated are not, resulting in an incoherency in the system page
+	  tables. The workaround changes the TLB flushing routines to invalidate
+	  entries regardless of the ASID.
+
 endmenu
 
 source "arch/arm/common/Kconfig"
 
 config FORCE_MAX_ZONEORDER
-	int
-	depends on SA1111
-	default "9"
+	int "Maximum Zone order" 
+	range 11 15 if ARCH_CELESTIAL
+	default "9" if SA111
+	default "12" if ARCH_CELESTIAL
 
 menu "Bus support"
 

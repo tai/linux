@@ -86,7 +86,7 @@
 #endif
 
 /* Define the friendly delay before and after opening net devices */
-#define CONF_PRE_OPEN		500	/* Before opening: 1/2 second */
+#define CONF_PRE_OPEN		5500	/* Before opening: 1/2 second */
 #define CONF_POST_OPEN		1	/* After opening: 1 second */
 
 /* Define the timeout for waiting for a DHCP/BOOTP/RARP reply */

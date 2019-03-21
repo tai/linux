@@ -1,0 +1,71 @@
+
+config FB_CELESTIAL
+	tristate "Celestial CNC platform framebuffer support"
+	depends on FB && ARCH_CELESTIAL
+	select FB_CFB_FILLRECT
+	select FB_CFB_COPYAREA
+	select FB_CFB_IMAGEBLIT
+	select CELESTIAL_GFX_ARGB_MODE if MACH_CELESTIAL_CNC1800L=y
+	help
+	  Frame buffer driver for the celestial platform.
+
+config FB0_SIZE
+	hex "Default size of frame buffer 0"
+	depends on FB_CELESTIAL
+	range 0x800000 0x4000000
+	default "0x1000000"
+	help
+	    size of frame buffer 0, which is used for OSD Layer 0, frame buffer 2 is included in this buffer. range from 0x800000 to 0x1000000
+
+config FB2_SIZE
+	hex "Default size of frame buffer 2"
+	depends on FB_CELESTIAL
+	range 0x400000 0x4000000
+	default "0x800000"
+	help
+	    size of frame buffer 2, it's included in frame buffer 0, set to half size of fb 0 is recommended. range from 0x400000 to 0x800000
+
+config CNC1800H_GFX_ENABLE_ARGB
+	bool "Celestial CNC1800H GFX support ARGB Mode"
+	depends on FB_CELESTIAL && MACH_CELESTIAL_CNC1800H
+	select CELESTIAL_GFX_ARGB_MODE
+	default n
+	help
+	    Frame buffer/GFX enable ARGB8888 mode, this mode on CNC1800H has bug, left start address must be even. So if you want to use this mode, must care for the this cases. Default Mode is BGRA8888(which is no problem)
+
+config FORCE_TWO_OSD_LAYER
+	bool "Force CNC1800H 2 osd layers support"
+	depends on FB_CELESTIAL && (CELESTIALSEMI_MEM_SIZE = 256) && MACH_CELESTIAL_CNC1800H
+	default n
+	help
+	    Force 2 OSD layer support on CNC1800H, if n, for 32bit ture color mode only 1 osd layer support, for 16bit support 2 osd layer. if y, the driver is forced to support 2 osd layer for 32bit or 16bit color mode. 
+
+config TWO_OSD_LAYER_SUPPORT
+	bool "Make CNC1800L 2 Graphic Layers support"
+	depends on FB_CELESTIAL && ( (CELESTIAL_MEM_SIZE = 256) || (CELESTIAL_MEM_SIZE = 512) || (CELESTIAL_MEM_SIZE = 1024))
+	default y
+	help
+	    CNC1800L support 2 Graphic Layers, if want to save memory and not use second OSD layer, the second OSD can be close. if n, the frambuffer 1 will the same devide with frambuffer 0.
+
+config FB1_SIZE
+	hex "Default size of frame buffer 1"
+	depends on FB_CELESTIAL && TWO_OSD_LAYER_SUPPORT
+	range 0x800000 0x4000000
+	default "0x1000000"
+	help
+	    size of frame buffer 1, which is used for OSD Layer 1, frame buffer 3 is included in this buffer. range from 0x800000 to 0x1000000.
+
+config FB3_SIZE
+	hex "Default size of frame buffer 3"
+	depends on FB_CELESTIAL && TWO_OSD_LAYER_SUPPORT
+	range 0x400000 0x4000000
+	default "0x800000"
+	help
+	    size of frame buffer 3, it's included in frame buffer 1, set to half size of fb 1 is recommended. range from 0x400000 to 0x800000.
+
+config CELESTIAL_GFX_ARGB_MODE
+	tristate
+	depends on FB && ARCH_CELESTIAL
+	default n
+	help
+	    GFX is set default to ARGB mode!

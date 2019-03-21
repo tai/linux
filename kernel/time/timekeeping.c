@@ -32,6 +32,8 @@ struct timekeeper {
 	cycle_t cycle_interval;
 	/* Number of clock shifted nano seconds in one NTP interval. */
 	u64	xtime_interval;
+	/* shifted nano seconds left over when rounding cycle_interval */
+	s64	xtime_remainder;
 	/* Raw nano seconds accumulated per NTP interval. */
 	u32	raw_interval;
 
@@ -62,7 +64,7 @@ struct timekeeper timekeeper;
 static void timekeeper_setup_internals(struct clocksource *clock)
 {
 	cycle_t interval;
-	u64 tmp;
+	u64 tmp, ntpinterval;
 
 	timekeeper.clock = clock;
 	clock->cycle_last = clock->read(clock);
@@ -70,6 +72,7 @@ static void timekeeper_setup_internals(struct clocksource *clock)
 	/* Do the ns -> cycle conversion first, using original mult */
 	tmp = NTP_INTERVAL_LENGTH;
 	tmp <<= clock->shift;
+	ntpinterval = tmp;
 	tmp += clock->mult/2;
 	do_div(tmp, clock->mult);
 	if (tmp == 0)
@@ -80,6 +83,7 @@ static void timekeeper_setup_internals(struct clocksource *clock)
 
 	/* Go back from cycles -> shifted ns */
 	timekeeper.xtime_interval = (u64) interval * clock->mult;
+	timekeeper.xtime_remainder = ntpinterval - timekeeper.xtime_interval;
 	timekeeper.raw_interval =
 		((u64) interval * clock->mult) >> clock->shift;
 
@@ -168,8 +172,15 @@ int __read_mostly timekeeping_suspended;
 static struct timespec xtime_cache __attribute__ ((aligned (16)));
 void update_xtime_cache(u64 nsec)
 {
-	xtime_cache = xtime;
-	timespec_add_ns(&xtime_cache, nsec);
+	/*
+	 * Use temporary variable so get_seconds() cannot catch
+	 * an intermediate xtime_cache.tv_sec value.
+	 * The ACCESS_ONCE() keeps the compiler from optimizing
+	 * out the intermediate value.
+	 */
+	struct timespec ts = xtime;
+	timespec_add_ns(&ts, nsec);
+	ACCESS_ONCE(xtime_cache) = ts;
 }
 
 /* must hold xtime_lock */
@@ -177,7 +188,7 @@ void timekeeping_leap_insert(int leapsecond)
 {
 	xtime.tv_sec += leapsecond;
 	wall_to_monotonic.tv_sec -= leapsecond;
-	update_vsyscall(&xtime, timekeeper.clock);
+	update_vsyscall(&xtime, timekeeper.clock, timekeeper.mult);
 }
 
 #ifdef CONFIG_GENERIC_TIME
@@ -337,7 +348,7 @@ int do_settimeofday(struct timespec *tv)
 	timekeeper.ntp_error = 0;
 	ntp_clear();
 
-	update_vsyscall(&xtime, timekeeper.clock);
+	update_vsyscall(&xtime, timekeeper.clock, timekeeper.mult);
 
 	write_sequnlock_irqrestore(&xtime_lock, flags);
 
@@ -485,6 +496,17 @@ int timekeeping_valid_for_hres(void)
 	} while (read_seqretry(&xtime_lock, seq));
 
 	return ret;
+}
+
+/**
+ * timekeeping_max_deferment - Returns max time the clocksource can be deferred
+ *
+ * Caller must observe xtime_lock via read_seqbegin/read_seqretry to
+ * ensure that the clocksource does not change!
+ */
+u64 timekeeping_max_deferment(void)
+{
+	return timekeeper.clock->max_idle_ns;
 }
 
 /**
@@ -770,7 +792,8 @@ void update_wall_time(void)
 
 		/* accumulate error between NTP and clock interval */
 		timekeeper.ntp_error += tick_length;
-		timekeeper.ntp_error -= timekeeper.xtime_interval <<
+		timekeeper.ntp_error -=
+		    (timekeeper.xtime_interval + timekeeper.xtime_remainder) <<
 					timekeeper.ntp_error_shift;
 	}
 
@@ -811,7 +834,7 @@ void update_wall_time(void)
 	update_xtime_cache(nsecs);
 
 	/* check to see if there is a new clocksource to use */
-	update_vsyscall(&xtime, timekeeper.clock);
+	update_vsyscall(&xtime, timekeeper.clock, timekeeper.mult);
 }
 
 /**
@@ -834,6 +857,7 @@ void getboottime(struct timespec *ts)
 
 	set_normalized_timespec(ts, -boottime.tv_sec, -boottime.tv_nsec);
 }
+EXPORT_SYMBOL_GPL(getboottime);
 
 /**
  * monotonic_to_bootbased - Convert the monotonic time to boot based.
@@ -843,6 +867,7 @@ void monotonic_to_bootbased(struct timespec *ts)
 {
 	*ts = timespec_add_safe(*ts, total_sleep_time);
 }
+EXPORT_SYMBOL_GPL(monotonic_to_bootbased);
 
 unsigned long get_seconds(void)
 {

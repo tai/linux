@@ -635,6 +635,19 @@ int soc_common_drv_pcmcia_probe(struct device *dev, struct pcmcia_low_level *ops
 		skt = &sinfo->skt[i];
 
 		skt->socket.ops = &soc_common_pcmcia_operations;
+#ifdef CSM18XX_PCMCIA
+		skt->socket.ops->set_cis_rmode  = ops->set_cis_rmode;
+		skt->socket.ops->set_cis_wmode  = ops->set_cis_wmode;
+		skt->socket.ops->set_comm_rmode = ops->set_comm_rmode;
+		skt->socket.ops->set_comm_wmode = ops->set_comm_wmode;
+		skt->socket.ops->set_io_mode    = ops->set_io_mode;
+		skt->socket.ops->read_cis       = ops->read_cis;
+		skt->socket.ops->write_cis      = ops->write_cis;
+		skt->socket.ops->read_comm      = ops->read_comm;
+		skt->socket.ops->write_comm     = ops->write_comm;
+		skt->socket.ops->read_io        = ops->read_io;
+		skt->socket.ops->write_io       = ops->write_io;
+#endif
 		skt->socket.owner = ops->owner;
 		skt->socket.dev.parent = dev;
 
@@ -646,6 +659,7 @@ int soc_common_drv_pcmcia_probe(struct device *dev, struct pcmcia_low_level *ops
 		skt->dev	= dev;
 		skt->ops	= ops;
 
+#if 0
 		ret = request_resource(&iomem_resource, &skt->res_skt);
 		if (ret)
 			goto out_err_1;
@@ -661,6 +675,7 @@ int soc_common_drv_pcmcia_probe(struct device *dev, struct pcmcia_low_level *ops
 		ret = request_resource(&skt->res_skt, &skt->res_attr);
 		if (ret)
 			goto out_err_4;
+#endif
 
 		skt->virt_io = ioremap(skt->res_io.start, 0x10000);
 		if (skt->virt_io == NULL) {

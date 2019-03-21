@@ -98,6 +98,24 @@ config CARDBUS
 
 comment "PC-card bridges"
 
+config CNC18XX_PCMCIA
+        tristate "Cavium Celestial PCMCIA(Socket Service) support for CNC18xx SoC"
+        depends on PCMCIA
+        help
+          This enables the PCMCIA Socket Service on the CNC1800x .
+
+          No board specfic support is done by this driver, each board
+          must advertise a platform_device for the driver to attach.
+
+config CNC18XX_PCMCIA_CI
+        bool "Cavium Celestial PCMCIA(Socket Service) CI support for CNC18xx SoC"
+        depends on CNC18XX_PCMCIA
+        help
+          This enables the PCMCIA Socket Service on the CNC1800x .
+
+          No board specfic support is done by this driver, each board
+          must advertise a platform_device for the driver to attach.
+
 config YENTA
 	tristate "CardBus yenta-compatible bridge support"
 	depends on PCI

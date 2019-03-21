@@ -41,6 +41,7 @@
  * (host controller _Structural_ parameters)
  * see EHCI spec, Table 2-4 for each value
  */
+ #if 0
 static void dbg_hcs_params (struct ehci_hcd *ehci, char *label)
 {
 	u32	params = ehci_readl(ehci, &ehci->caps->hcs_params);
@@ -73,6 +74,7 @@ static void dbg_hcs_params (struct ehci_hcd *ehci, char *label)
 				label, buf);
 	}
 }
+#endif
 #else
 
 static inline void dbg_hcs_params (struct ehci_hcd *ehci, char *label) {}
@@ -85,6 +87,7 @@ static inline void dbg_hcs_params (struct ehci_hcd *ehci, char *label) {}
  * (host controller _Capability_ parameters)
  * see EHCI Spec, Table 2-5 for each value
  * */
+ #if 0
 static void dbg_hcc_params (struct ehci_hcd *ehci, char *label)
 {
 	u32	params = ehci_readl(ehci, &ehci->caps->hcc_params);
@@ -107,6 +110,8 @@ static void dbg_hcc_params (struct ehci_hcd *ehci, char *label)
 			HCC_64BIT_ADDR(params) ? " 64 bit addr" : "");
 	}
 }
+ 
+#endif
 #else
 
 static inline void dbg_hcc_params (struct ehci_hcd *ehci, char *label) {}

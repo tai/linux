@@ -1721,6 +1721,17 @@ static __always_inline void *slab_alloc(struct kmem_cache *s,
 	if (should_failslab(s->objsize, gfpflags))
 		return NULL;
 
+ /* 37 struct kmem_cache_cpu {
+ 38         void **freelist;        Pointer to first free per cpu object
+ 39         struct page *page;      The slab from which we are allocating
+ 40         int node;               The node of the page (or -1 for debug)
+ 41         unsigned int offset;    Freepointer offset (in word units)
+ 42         unsigned int objsize;   Size of an object (from kmem_cache)
+ 43 #ifdef CONFIG_SLUB_STATS
+ 44         unsigned stat[NR_SLUB_STAT_ITEMS];
+ 45 #endif
+ 46 }; */
+
 	local_irq_save(flags);
 	c = get_cpu_slab(s, smp_processor_id());
 	objsize = c->objsize;
@@ -1729,9 +1740,17 @@ static __always_inline void *slab_alloc(struct kmem_cache *s,
 		object = __slab_alloc(s, gfpflags, node, addr, c);
 
 	else {
-		object = c->freelist;
-		c->freelist = object[c->offset];
-		stat(c, ALLOC_FASTPATH);
+		if ( ((unsigned int)c->freelist & -0x1000) == 0u ) {
+			printk(KERN_EMERG "%p->freelist corrupt: %p\n", c, c->freelist);
+			printk(KERN_EMERG "freelist:%p page:%p node:%d offset:%u objsize:%u\n", 
+				c->freelist, c->page, c->node, c->offset, c->objsize);
+			local_irq_restore(flags);
+			return NULL;
+		} else {
+			object = c->freelist;
+			c->freelist = object[c->offset];
+			stat(c, ALLOC_FASTPATH);
+		}
 	}
 	local_irq_restore(flags);
 
@@ -1878,6 +1897,14 @@ static __always_inline void slab_free(struct kmem_cache *s,
 	if (!(s->flags & SLAB_DEBUG_OBJECTS))
 		debug_check_no_obj_freed(object, c->objsize);
 	if (likely(page == c->page && c->node >= 0)) {
+		if ( ((unsigned int)object & -0x1000u) == 0u ) {
+			printk(KERN_EMERG "object corrupt: %p\n", object);
+			printk(KERN_EMERG "%p->freelist:%p page:%p node:%d offset:%u objsize:%u\n", 
+				c, c->freelist, c->page, c->node, c->offset, c->objsize);
+			local_irq_restore(flags);
+			dump_stack();
+			return;
+		}
 		object[c->offset] = c->freelist;
 		c->freelist = object;
 		stat(c, FREE_FASTPATH);

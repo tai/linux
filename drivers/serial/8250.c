@@ -83,6 +83,9 @@ static unsigned int skip_txen_test; /* force skip of txen test at init time */
 
 #define PASS_LIMIT	256
 
+#define BOTH_EMPTY 	(UART_LSR_TEMT | UART_LSR_THRE)
+
+
 /*
  * We default to IRQ0 for the "no irq" hack.   Some
  * machine types want others as well - they're free
@@ -252,7 +255,8 @@ static const struct serial8250_config uart_config[] = {
 		.fifo_size	= 128,
 		.tx_loadsz	= 128,
 		.fcr		= UART_FCR_ENABLE_FIFO | UART_FCR_R_TRIG_10,
-		.flags		= UART_CAP_FIFO | UART_CAP_EFR | UART_CAP_SLEEP,
+		/* UART_CAP_EFR breaks billionon CF bluetooth card. */
+		.flags		= UART_CAP_FIFO | UART_CAP_SLEEP,
 	},
 	[PORT_RSA] = {
 		.name		= "RSA",
@@ -1339,14 +1343,12 @@ static void serial8250_start_tx(struct uart_port *port)
 		serial_out(up, UART_IER, up->ier);
 
 		if (up->bugs & UART_BUG_TXEN) {
-			unsigned char lsr, iir;
+			unsigned char lsr;
 			lsr = serial_in(up, UART_LSR);
 			up->lsr_saved_flags |= lsr & LSR_SAVE_FLAGS;
-			iir = serial_in(up, UART_IIR) & 0x0f;
 			if ((up->port.type == PORT_RM9000) ?
-				(lsr & UART_LSR_THRE &&
-				(iir == UART_IIR_NO_INT || iir == UART_IIR_THRI)) :
-				(lsr & UART_LSR_TEMT && iir & UART_IIR_NO_INT))
+				(lsr & UART_LSR_THRE) :
+				(lsr & UART_LSR_TEMT))
 				transmit_chars(up);
 		}
 	}
@@ -1586,9 +1588,14 @@ static irqreturn_t serial8250_interrupt(int irq, void *dev_id)
 			 * UART was busy. The interrupt must be cleared by reading
 			 * the UART status register (USR) and the LCR re-written. */
 			unsigned int status;
-			status = *(volatile u32 *)up->port.private_data;
-			serial_out(up, UART_LCR, up->lcr);
+			if (up!= NULL && up->port.private_data != NULL){
+				status = *(volatile u32 *)up->port.private_data;
+			}else {
 
+				status = serial_in(up, UART_USR);
+			}
+			serial_out(up, UART_LCR, up->lcr);
+			
 			handled = 1;
 
 			end = NULL;
@@ -1794,7 +1801,7 @@ static unsigned int serial8250_tx_empty(struct uart_port *port)
 	up->lsr_saved_flags |= lsr & LSR_SAVE_FLAGS;
 	spin_unlock_irqrestore(&up->port.lock, flags);
 
-	return lsr & UART_LSR_TEMT ? TIOCSER_TEMT : 0;
+	return (lsr & BOTH_EMPTY) == BOTH_EMPTY ? TIOCSER_TEMT : 0;
 }
 
 static unsigned int serial8250_get_mctrl(struct uart_port *port)
@@ -1851,8 +1858,6 @@ static void serial8250_break_ctl(struct uart_port *port, int break_state)
 	serial_out(up, UART_LCR, up->lcr);
 	spin_unlock_irqrestore(&up->port.lock, flags);
 }
-
-#define BOTH_EMPTY (UART_LSR_TEMT | UART_LSR_THRE)
 
 /*
  *	Wait for transmitter & holding register to empty
@@ -2433,6 +2438,11 @@ static unsigned int serial8250_port_size(struct uart_8250_port *pt)
 #ifdef CONFIG_ARCH_OMAP
 	if (is_omap_port(pt))
 		return 0x16 << pt->port.regshift;
+#endif
+
+#ifdef CONFIG_ARCH_CELESTIALSEMI
+	if (pt->port.iotype == UPIO_DWAPB)
+		return 0x20 << pt->port.regshift;
 #endif
 	return 8 << pt->port.regshift;
 }

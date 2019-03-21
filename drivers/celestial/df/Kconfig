@@ -1,0 +1,46 @@
+
+menu "Celestial DF Drivers"
+	
+if ARCH_CELESTIAL
+config CELESTIAL_DF
+	bool "CNC1800L Display"
+	depends on ARCH_CELESTIAL
+	default y
+	help 
+	Include support drvier for DF of celestial platform
+endif
+
+if ARCH_CELESTIALSEMI
+config CELESTIAL_DF
+	bool "CNC1800H Display"
+	depends on ARCH_CELESTIALSEMI
+	default y
+	help 
+	Include support drvier for DF of celestial platform
+endif
+
+if CELESTIAL_DF
+config HD2SD_ENABLE
+	bool "CNC1800L HD2SD Function"
+	depends on CELESTIAL_DF
+	default y
+	help
+	Enable HD2SD function. It will use 0x5a0000 Bytes memory.
+endif
+
+config CELESTIAL_DF_DEBUG
+       bool "DF Debugging"
+       depends on CELESTIAL_DF
+       help
+         This turns on low-level debugging for the celestial df driver.
+           Normally, you should say 'N'.
+
+
+config DF_DEBUG_VERBOSE
+       int "DF Debugging verbosity (0 = quiet, 3 = noisy)"
+       depends on CELESTIAL_DF_DEBUG
+       default "0"
+       help
+         Determines the verbosity level of the df debugging messages.
+
+endmenu

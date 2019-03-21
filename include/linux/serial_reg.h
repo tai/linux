@@ -133,6 +133,7 @@
 
 #define UART_SCR	7	/* I/O: Scratch Register */
 
+#define UART_USR    31
 /*
  * DLAB=1
  */

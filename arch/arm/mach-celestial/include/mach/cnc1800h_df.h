@@ -1,0 +1,335 @@
+#ifndef __CNC1800H_DF_H__
+#define __CNC1800H_DF_H__
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+#define  CSTVE_IOC_MAGIC  'e'
+#define  CSDF_IOC_MAGIC   'x' 
+
+/*****************IOCTL for TVE******************/
+#define CSTVE_IOC_ENABLE	            _IOW(CSTVE_IOC_MAGIC, 0x0b, int)
+#define CSTVE_IOC_DISABLE	            _IOR(CSTVE_IOC_MAGIC, 0x0c, int)
+#define CSTVE_IOC_SET_MODE	            _IOW(CSTVE_IOC_MAGIC, 0x01, int)
+#define CSTVE_IOC_GET_MODE	            _IOW(CSTVE_IOC_MAGIC, 0x02, int)
+#define CSTVE_IOC_SET_WHILE_LEVEL	    _IOW(CSTVE_IOC_MAGIC, 0x03, int)
+#define CSTVE_IOC_GET_WHILE_LEVEL	    _IOR(CSTVE_IOC_MAGIC, 0x04, int)
+#define CSTVE_IOC_SET_BLACK_LEVEL	    _IOW(CSTVE_IOC_MAGIC, 0x05, int)
+#define CSTVE_IOC_GET_BLACK_LEVEL	    _IOR(CSTVE_IOC_MAGIC, 0x06, int)
+#define CSTVE_IOC_SET_SATURATION_LEVEL	_IOW(CSTVE_IOC_MAGIC, 0x07, int)
+#define CSTVE_IOC_GET_SATURATION_LEVEL	_IOR(CSTVE_IOC_MAGIC, 0x08, int)
+#define CSTVE_IOC_SET_COMP_CHAN         _IOW(CSTVE_IOC_MAGIC, 0x15, int)
+#define CSTVE_IOC_SET_COLOR_MODULATOR_COEF   _IOW(CSTVE_IOC_MAGIC, 0x16, int)
+
+/* dual output */
+#define CSTVE_IOC_BIND_GFX		        _IOW(CSTVE_IOC_MAGIC, 0x17, int)
+#define CSTVE_IOC_BIND_VID		        _IOW(CSTVE_IOC_MAGIC, 0x18, int)
+#define CSTVE_IOC_SET_OUTPUT	        _IOW(CSTVE_IOC_MAGIC, 0x19, int)
+#define CSTVE_IOC_GET_BIND_INF	        _IOW(CSTVE_IOC_MAGIC, 0x20, int)
+
+#define CSTVE_IOC_WSS_CTRL      	_IOW(CSTVE_IOC_MAGIC, 0x22, int)
+#define CSTVE_IOC_WSS_SETCONFIG     _IOW(CSTVE_IOC_MAGIC, 0x23, int)
+#define CSTVE_IOC_WSS_SETINFO       _IOW(CSTVE_IOC_MAGIC, 0x24, int)
+#define CSTVE_IOC_TTX_CTRL       	_IOW(CSTVE_IOC_MAGIC, 0x25, int)
+#define CSTVE_IOC_TTX_SETCONFIG     _IOW(CSTVE_IOC_MAGIC, 0x26, int)
+#define CSTVE_IOC_TTX_SETINFO      	_IOW(CSTVE_IOC_MAGIC, 0x27, int)
+
+
+/*******IOCTL for Display Feeder ********/
+#define CSDF_IOC_DISP_ON 		    _IOW(CSDF_IOC_MAGIC, 0x0F, int)
+#define CSDF_IOC_DISP_OFF 		    _IOW(CSDF_IOC_MAGIC, 0x10, int)
+#define CSDF_IOC_DISP_VID_ON 		_IOW(CSDF_IOC_MAGIC, 0x11, int)
+#define CSDF_IOC_DISP_VID_OFF 		_IOW(CSDF_IOC_MAGIC, 0x12, int)
+#define CSDF_IOC_DISP_GFX_ON 		_IOW(CSDF_IOC_MAGIC, 0x1C, int)
+#define CSDF_IOC_DISP_GFX_OFF 		_IOW(CSDF_IOC_MAGIC, 0x1D, int)
+#define CSDF_IOC_DISP_POS 		    _IOW(CSDF_IOC_MAGIC, 0x13, df_output_pos)
+//#define CSDF_IOC_DISP_GET_POS 	_IOW(CSDF_IOC_MAGIC, 0x14, int)
+#define CSDF_IOC_DISP_VID_ALPHA 	_IOW(CSDF_IOC_MAGIC, 0x15, int)
+//#define CSDF_IOC_DISP_GET_ALPHA 	_IOW(CSDF_IOC_MAGIC, 0x16, int)
+#define CSDF_IOC_DISP_VIDFMT 		_IOW(CSDF_IOC_MAGIC, 0x18, int)
+#define CSDF_IOC_Z_ORDER            _IOW(CSDF_IOC_MAGIC, 0x19, int)
+//#define CSDF_IOC_GET_Z_ORDER      _IOW(CSDF_IOC_MAGIC, 0x1A, int)
+#define CSDF_IOC_DISP_SETBGCOLOR    _IOW(CSDF_IOC_MAGIC, 0x1B, int)
+#define CSDF_IOC_DISP_SETMODE       _IOW(CSDF_IOC_MAGIC, 0x1E, int)
+//#define CSDF_IOC_DISP_CROP       	_IOW(CSDF_IOC_MAGIC, 0x1F, struct df_vid_crop)
+#define CSDF_IOC_DISP_HD2SD_ENABLE  _IOW(CSDF_IOC_MAGIC, 0x20, int)
+#define CSDF_IOC_DISP_HD2SD_CONFIG  _IOW(CSDF_IOC_MAGIC, 0x21, int)
+
+
+typedef enum
+{
+	CSVOUT_COMP_YVU = 0,
+	CSVOUT_COMP_RGB	
+
+}CSVOUT_CompChannType_t;
+
+typedef enum {
+	DF_DEV_NUKOWN = -1,
+	DF_DEV_GFX0 = 0,
+	DF_DEV_GFX1,
+	DF_DEV_VIDEO0,
+	DF_DEV_VIDEO1,
+	DF_DEV_OUT0,
+	DF_DEV_OUT1,
+	DF_DEV_TVE0,
+	DF_DEV_TVE1,
+	DF_DEV_MAX
+} DF_DEV_TYPE;
+
+typedef enum _DF_VIDEO_FORMAT_
+{
+	NOT_STANDARD_VIDEO_MODE = -1,		
+	DISP_YUV_720P_60FPS        =0,    
+	DISP_YUV_1080I_30FPS       =1,   
+	DISP_YUV_480P              =2,          
+	DISP_YUV_NTSC              =3,          
+	DISP_YUV_720P_50FPS        =4,    
+	DISP_YUV_1080I_25FPS       =5,   
+	DISP_YUV_576P              =6,          
+	DISP_YUV_PAL               =7,           
+	DISP_YUV_1080P_60FPS       =8,   
+	DISP_YUV_1080P_50FPS       =9,   
+	DISP_YUV_1080P_24FPS       =10,   
+	DISP_YUV_1080P_25FPS       =11,   
+	DISP_YUV_1080P_30FPS       =12,   
+	DISP_YUV_1080I_25FPS_AS    =13,
+	DISP_RGB_VGA_60FPS         =14,     
+	DISP_RGB_SVGA_60FPS        =15,    
+	DISP_RGB_XGA_60FPS         =16,     
+	DISP_RGB_SXGA_60FPS        =17,    
+	DISP_RGB_UXGA_60FPS        =18,
+	DISP_RGB_720P_60FPS        =19,
+	DISP_1440x288P_50_M1       =20,   
+	DISP_1440x288P_50_M2       =21,   
+	DISP_1440x288P_50_M3       =22,   
+	DISP_2880x576I_50          =23,      
+	DISP_2880x288P_50_M1       =24,   
+	DISP_2880x288P_50_M2       =25,   
+	DISP_2880x288P_50_M3       =26,
+	DISP_1440x576P_50          =27,
+	DISP_1440x240P_60_M1       =28,
+	DISP_1440x240P_60_M2       =29,
+	DISP_2880x480I_60          =30,
+	DISP_2880x240P_60_M1       =31,
+	DISP_2880x240P_60_M2       =32,
+	DISP_1440x480P_60          =33,
+	DISP_RGB_DMT_640x480_60    =34,
+	DISP_RGB_DMT_640x480_75    =35,    
+	DISP_RGB_DMT_800x600_60    =36,    
+	DISP_RGB_DMT_800x600_75    =37,    
+	DISP_RGB_DMT_848x480_60    =38,    
+	DISP_RGB_DMT_1152x864_75   =39,   
+	DISP_RGB_DMT_1280x768_60   =40,   
+	DISP_RGB_DMT_1280x960_60   =41,   
+	DISP_RGB_DMT_1280x1024_60  =42,  
+	DISP_RGB_DMT_1360x768_60   =43,   
+	DISP_RGB_DMT_1440x900_60   =44,   
+	DISP_RGB_CVT_640x480_75    =45,    
+	DISP_RGB_CVT_800x600_60    =46,    
+	DISP_RGB_CVT_800x600_75    =47,    
+	DISP_RGB_CVT_1024x768_60   =48,   
+	DISP_RGB_CVT_1280x1024_60  =49,  
+	DISP_RGB_CVT_848x480_60    =50,    
+	DISP_RGB_CVT_848x480_75    =51,    
+	DISP_RGB_CVT_1024x576_60   =52,   
+	DISP_RGB_CVT_1024x576_75   =53,   
+	DISP_RGB_CVT_1280x720_60   =54,   
+	DISP_RGB_CVT_1280x720_75   =55,   
+	DISP_RGB_CVT_640x400_75    =56,    
+	DISP_RGB_CVT_768x480_60    =57,    
+	DISP_RGB_CVT_768x480_75    =58,    
+	DISP_RGB_CVT_1024x640_60   =59,   
+	DISP_RGB_CVT_1024x640_75   =60,   
+	DISP_RGB_CVT_1280x800_75   =61,   
+	DISP_RGB_CVT_800x600_RED   =62,   
+	DISP_RGB_CVT_1024x768_RED  =63,  
+	DISP_RGB_CVT_1280x960_RED  =64,  
+	DISP_RGB_CVT_848x480_RED   =65,   
+	DISP_RGB_CVT_1024x576_RED  =66,  
+	DISP_RGB_CVT_1280x720_RED  =67,  
+	DISP_RGB_CVT_1600x900_RED  =68,  
+	DISP_RGB_CVT_768x480_RED   =69,   
+	DISP_RGB_CVT_1024x640_RED  =70,  
+	DISP_RGB_CVT_1280x800_RED  =71,  
+	DISP_RGB_CVT_1600x1000_RED =72, 
+	DISP_RGB_800x480 = 73,
+	DISP_RGB_1360x768 = 74,
+	DISP_RGB_1366x768= 75,
+	DISP_RGB_1920x1080P30 = 76,
+	DISP_RGB_1920x1080P60 = 77,
+	DISP_RGB_1920x1080I30 = 78,
+ 	DISP_FMT_MAX,
+}DF_VIDEO_FORMAT;
+
+typedef enum 
+{
+	TVOUT_MODE_576I = 0,
+	TVOUT_MODE_480I,
+	TVOUT_MODE_576P,
+	TVOUT_MODE_480P,
+	TVOUT_MODE_720P50,
+	TVOUT_MODE_720P60,
+	TVOUT_MODE_1080I25,
+	TVOUT_MODE_1080I30,
+
+	TVOUT_MODE_SECAM,
+	TVOUT_MODE_PAL_M,
+	TVOUT_MODE_PAL_N,
+	TVOUT_MODE_PAL_CN,
+	TVOUT_MODE_1080P24,
+	TVOUT_MODE_1080P25,
+	TVOUT_MODE_1080P30,
+	TVOUT_MODE_1080P50,
+	TVOUT_MODE_1080P60,
+
+	TVOUT_RGB_640X480_60FPS,
+	TVOUT_RGB_800X600_60FPS,
+	TVOUT_RGB_1024X768_60FPS,
+       TVOUT_RGB_1280X720_60FPS,
+       TVOUT_RGB_800X480_60FPS,
+       TVOUT_RGB_1440X900_60FPS,
+       TVOUT_RGB_1280X1024_60FPS,
+       TVOUT_RGB_1360X768_60FPS,
+       TVOUT_RGB_1920X1080P30,
+       TVOUT_RGB_1920X1080P60,
+       TVOUT_RGB_1920X1080I30,
+} TVOUT_MODE;
+
+typedef enum
+{
+        DF_OUTPUT_CVBS_SVIDEO = 0,
+        DF_OUTPUT_YPBPR,
+        DF_OUTPUT_VGA
+} DF_OUTPUT_MODE;
+
+typedef struct DF_DEV_t {
+	unsigned int dev_minor;
+	DF_DEV_TYPE dev_type;
+	spinlock_t spin_lock;
+	unsigned int enable;
+	TVOUT_MODE tve_format;
+	char* name;
+} dfdev;
+
+typedef struct DF_OUTPUT_CONFIG_t_{
+	int gfx_output[2]; //gfx_layer_id
+	int vid_output[3]; //video_layer_id
+	DF_OUTPUT_MODE output_mode[2];//outif_id
+}DF_OUTPUT_CONFIG_t;
+
+typedef struct df_rect
+{
+        int left;
+        int right;
+        int top;
+        int bottom;
+}df_rect;
+
+typedef struct df_output_pos
+{
+	df_rect src;
+	df_rect dst;
+}df_output_pos;
+
+typedef struct _DF_OUTIF_FORMAT_INFO_
+{
+	int  mIsYUVorRGB;
+	int  mWidth;
+	int  mHeight;
+	int  mFPS;
+	int  mFreq;
+	int  mIsHD;
+	int  mVSyncPol;
+	int  mHSyncPol;
+	int  mHRes;
+	int  mHActive;
+	int  mHSyncFP;
+	int  mHSyncWidth;
+	int  mHSyncBP;
+	int  mVRes;
+	int  mVActline;
+	int  mVSyncFP;
+	int  mVSyncWidth;
+	int  mVSyncBP;
+	int  mVidType;
+	int  mVidrptr;
+	int  mYCMuxEn;
+	int  mPALFmt;
+	int  mFmtIdx;
+	char *mFmtName;
+
+} df_out_if_timing;
+
+enum _DF_SCALER_COEFF_TYPE_
+{
+	DF_VIDEO1_Y_HFIR_COEFF_IDX = 0,//              0 : Video 1 HFIR Coeff
+	DF_VIDEO1_Y_VFIR_COEFF_IDX = 1,//              1 : Video 1 VFIR Coeff
+	DF_VIDEO2_Y_HFIR_COEFF_IDX = 2,//              2 : Video 2 HFIR Coeff
+	DF_VIDEO2_Y_VFIR_COEFF_IDX = 3,//              3 : Video 2 VFIR Coeff
+	DF_HD2SD_Y_HFIR_COEFF_IDX  = 4,//              4 : HD2SD 1 HFIR Coeff
+	DF_HD2SD_Y_VFIR_COEFF_IDX   =5,//              5 : HD2SD 1 VFIR Coeff
+};
+
+enum _DF_VIDEO_SCALER_CFG_
+{
+	//Scaler Coeff Cfg
+	DF_SCL_STEP_FRACTION_BIT_WIDTH  = 13,
+	
+	DF_SCL_COEFF_FRACTION_BIT_WIDTH = 10,
+	DF_SCL_COEFF_INTREGER_BIT_WIDTH = 1,
+	DF_SCL_COEFF_POLARITY_BIT       = 15,
+
+	DF_SCL_WIDTH_MAX = 2048,
+	DF_SCL_FIR_TAP_MAX  = 32,
+	
+	//Video Scaler Cfg
+	DF_VIDEO_SCL_LUMA_VFIR_TAP_NUM          = 4,
+	DF_VIDEO_SCL_LUMA_VFIR_PHASE_LOG2BITS   = 4,
+	DF_VIDEO_SCL_LUMA_VFIR_PHASE_NUM        = 1 << DF_VIDEO_SCL_LUMA_VFIR_PHASE_LOG2BITS,
+	DF_VIDEO_SCL_LUMA_HFIR_TAP_NUM          = 4,	
+	DF_VIDEO_SCL_LUMA_HFIR_PHASE_LOG2BITS   = 4,
+	DF_VIDEO_SCL_LUMA_HFIR_PHASE_NUM        = 1 << DF_VIDEO_SCL_LUMA_HFIR_PHASE_LOG2BITS,
+	
+	DF_VIDEO_SCL_CHROMA_VFIR_TAP_NUM        = 2,
+	DF_VIDEO_SCL_CHROMA_VFIR_PHASE_LOG2BITS = 4,
+	DF_VIDEO_SCL_CHROMA_VFIR_PHASE_NUM      = 1 << DF_VIDEO_SCL_CHROMA_VFIR_PHASE_LOG2BITS,
+	DF_VIDEO_SCL_CHROMA_HFIR_TAP_NUM        = 2,	
+	DF_VIDEO_SCL_CHROMA_HFIR_PHASE_LOG2BITS = 4,
+	DF_VIDEO_SCL_CHROMA_HFIR_PHASE_NUM      = 1 << DF_VIDEO_SCL_CHROMA_HFIR_PHASE_LOG2BITS,
+
+	//HD2SD Capture Block
+	DF_HD2SD_SCL_LUMA_VFIR_TAP_NUM          = 4,
+	DF_HD2SD_SCL_LUMA_VFIR_PHASE_LOG2BITS   = 4,
+	DF_HD2SD_SCL_LUMA_VFIR_PHASE_NUM        = 1 << DF_HD2SD_SCL_LUMA_VFIR_PHASE_LOG2BITS,
+	DF_HD2SD_SCL_LUMA_HFIR_TAP_NUM          = 4,	
+	DF_HD2SD_SCL_LUMA_HFIR_PHASE_LOG2BITS   = 4,
+	DF_HD2SD_SCL_LUMA_HFIR_PHASE_NUM        = 1 << DF_HD2SD_SCL_LUMA_HFIR_PHASE_LOG2BITS,
+	
+	DF_HD2SD_SCL_CHROMA_VFIR_TAP_NUM        = 2,
+	DF_HD2SD_SCL_CHROMA_VFIR_PHASE_LOG2BITS = 4,
+	DF_HD2SD_SCL_CHROMA_VFIR_PHASE_NUM      = 1 << DF_HD2SD_SCL_CHROMA_VFIR_PHASE_LOG2BITS,
+	DF_HD2SD_SCL_CHROMA_HFIR_TAP_NUM        = 2,	
+	DF_HD2SD_SCL_CHROMA_HFIR_PHASE_LOG2BITS = 4,
+	DF_HD2SD_SCL_CHROMA_HFIR_PHASE_NUM      = 1 << DF_HD2SD_SCL_CHROMA_HFIR_PHASE_LOG2BITS,
+
+	//Gfx Horizontal Scaler
+	DF_GFX_SCL_STEP_FRACTION_BIT_WIDTH  = 10,
+	DF_GFX_SCL_HFIR_TAP_NUM        = 2,
+	DF_GFX_SCL_HFIR_PHASE_LOG2BITS = 6,
+	DF_GFX_SCL_HFIR_PHASE_NUM      = 1 << DF_GFX_SCL_HFIR_PHASE_LOG2BITS,	
+};
+
+typedef struct{
+	wait_queue_head_t wait;
+	unsigned int count;
+	int is_display;
+	struct fb_info *cur_fb_info;
+}CNC_FB_INTERRUPT;
+
+#ifdef __cplusplus
+}
+#endif
+
+#endif
+

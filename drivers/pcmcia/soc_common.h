@@ -113,6 +113,21 @@ struct pcmcia_low_level {
 	 */
 	int (*frequency_change)(struct soc_pcmcia_socket *, unsigned long, struct cpufreq_freqs *);
 #endif
+
+#ifdef CSM18XX_PCMCIA
+	void (*set_cis_rmode)(void);	//setting for CIS reading
+	void (*set_cis_wmode)(void);	//setting for CIS writing
+	void (*set_comm_rmode)(void);	//setting for common memory reading
+	void (*set_comm_wmode)(void);	//setting for common memory writing
+	void (*set_io_mode)(void);		//setting for io mode;
+	/*** note: the addr is not virtual addr, but the absolute addr in pc card ****/
+	unsigned char (*read_cis)(unsigned int addr);
+	void (*write_cis)(unsigned char val, unsigned int addr);
+	unsigned char (*read_comm)(unsigned int addr);
+	void (*write_comm)(unsigned char val, unsigned int addr);
+	unsigned char (*read_io)(unsigned int addr);
+	void (*write_io)(unsigned char val, unsigned int addr);
+#endif
 };
 
 

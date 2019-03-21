@@ -43,12 +43,18 @@ struct mmc_ios {
 #define MMC_BUS_WIDTH_1		0
 #define MMC_BUS_WIDTH_4		2
 #define MMC_BUS_WIDTH_8		3
+#define MMC_BUS_WIDTH_4_DDR	4
+#define MMC_BUS_WIDTH_8_DDR	5
 
 	unsigned char	timing;			/* timing specification used */
 
 #define MMC_TIMING_LEGACY	0
 #define MMC_TIMING_MMC_HS	1
 #define MMC_TIMING_SD_HS	2
+	unsigned char	ddr;			/* dual data rate used */
+#define MMC_SDR_MODE		0
+#define MMC_1_2V_DDR_MODE	1
+#define MMC_1_8V_DDR_MODE	2
 };
 
 struct mmc_host_ops {
@@ -119,7 +125,12 @@ struct mmc_host {
 	const struct mmc_host_ops *ops;
 	unsigned int		f_min;
 	unsigned int		f_max;
+	unsigned int		f_init;
 	u32			ocr_avail;
+	u32			ocr_avail_sdio;	/* SDIO-specific OCR */
+	u32			ocr_avail_sd;	/* SD-specific OCR */
+	u32			ocr_avail_mmc;	/* MMC-specific OCR */
+	struct notifier_block	pm_notify;
 
 #define MMC_VDD_165_195		0x00000080	/* VDD voltage 1.65 - 1.95 */
 #define MMC_VDD_20_21		0x00000100	/* VDD voltage 2.0 ~ 2.1 */
@@ -151,11 +162,18 @@ struct mmc_host {
 #define MMC_CAP_DISABLE		(1 << 7)	/* Can the host be disabled */
 #define MMC_CAP_NONREMOVABLE	(1 << 8)	/* Nonremovable e.g. eMMC */
 #define MMC_CAP_WAIT_WHILE_BUSY	(1 << 9)	/* Waits while card is busy */
+#define MMC_CAP_ERASE		(1 << 10)	/* Allow erase/trim commands */
+#define MMC_CAP_1_8V_DDR	(1 << 11)	/* can support */
+#define MMC_CAP_1_2V_DDR	(1 << 12)	/* can support */
+#define MMC_CAP_POWER_OFF_CARD	(1 << 13)	/* Can power off after boot */
+#define MMC_CAP_BUS_WIDTH_TEST	(1 << 14)	/* CMD14/CMD19 bus width ok */
+#define MMC_CAP_CLOCK_GATING	(1 << 15)	/* Can do clock gating dynamically */
 
 	/* host specific block data */
 	unsigned int		max_seg_size;	/* see blk_queue_max_segment_size */
 	unsigned short		max_hw_segs;	/* see blk_queue_max_hw_segments */
 	unsigned short		max_phys_segs;	/* see blk_queue_max_phys_segments */
+	unsigned short		max_segs;	/* see blk_queue_max_segments */
 	unsigned short		unused;
 	unsigned int		max_req_size;	/* maximum number of bytes in one req */
 	unsigned int		max_blk_size;	/* maximum size of one mmc block */
@@ -177,6 +195,7 @@ struct mmc_host {
 
 	/* Only used with MMC_CAP_DISABLE */
 	int			enabled;	/* host is enabled */
+	int			rescan_disable;	/* disable card detection */
 	int			nesting_cnt;	/* "enable" nesting count */
 	int			en_dis_recurs;	/* detect recursion */
 	unsigned int		disable_delay;	/* disable delay in msecs */
@@ -249,6 +268,7 @@ int mmc_card_can_sleep(struct mmc_host *host);
 int mmc_host_enable(struct mmc_host *host);
 int mmc_host_disable(struct mmc_host *host);
 int mmc_host_lazy_disable(struct mmc_host *host);
+int mmc_pm_notify(struct notifier_block *notify_block, unsigned long, void *);
 
 static inline void mmc_set_disable_delay(struct mmc_host *host,
 					 unsigned int disable_delay)

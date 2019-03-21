@@ -1,0 +1,11 @@
+
+menu "Celestial HDMI Drivers"
+	
+config CELESTIAL_HDMI
+	bool "CNC1800L HDMI Driver"
+	depends on ARCH_CELESTIAL
+	default n
+	help 
+		HDMI driver for cnc1800l
+
+endmenu

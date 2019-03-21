@@ -115,15 +115,15 @@ struct usb_hcd {
 	struct dma_pool		*pool [HCD_BUFFER_POOLS];
 
 	int			state;
-#	define	__ACTIVE		0x01
-#	define	__SUSPEND		0x04
-#	define	__TRANSIENT		0x80
+#define	__ACTIVE		0x01
+#define	__SUSPEND		0x04
+#define	__TRANSIENT		0x80
 
-#	define	HC_STATE_HALT		0
-#	define	HC_STATE_RUNNING	(__ACTIVE)
-#	define	HC_STATE_QUIESCING	(__SUSPEND|__TRANSIENT|__ACTIVE)
-#	define	HC_STATE_RESUMING	(__SUSPEND|__TRANSIENT)
-#	define	HC_STATE_SUSPENDED	(__SUSPEND)
+#define	HC_STATE_HALT		0
+#define	HC_STATE_RUNNING	(__ACTIVE)
+#define	HC_STATE_QUIESCING	(__SUSPEND|__TRANSIENT|__ACTIVE)
+#define	HC_STATE_RESUMING	(__SUSPEND|__TRANSIENT)
+#define	HC_STATE_SUSPENDED	(__SUSPEND)
 
 #define	HC_IS_RUNNING(state) ((state) & __ACTIVE)
 #define	HC_IS_SUSPENDED(state) ((state) & __SUSPEND)
@@ -234,7 +234,7 @@ struct hc_driver {
 	/* xHCI specific functions */
 		/* Called by usb_alloc_dev to alloc HC device structures */
 	int	(*alloc_dev)(struct usb_hcd *, struct usb_device *);
-		/* Called by usb_release_dev to free HC device structures */
+		/* Called by usb_disconnect to free HC device structures */
 	void	(*free_dev)(struct usb_hcd *, struct usb_device *);
 
 	/* Bandwidth computation functions */

@@ -12,13 +12,14 @@ fhci-objs := fhci-hcd.o fhci-hub.o fhci-q.o fhci-mem.o \
 ifeq ($(CONFIG_FHCI_DEBUG),y)
 fhci-objs += fhci-dbg.o
 endif
-xhci-objs := xhci-hcd.o xhci-mem.o xhci-pci.o xhci-ring.o xhci-hub.o xhci-dbg.o
+xhci-objs := xhci-hcd.o xhci-mem.o xhci-pci.o xhci-ring.o xhci-hub.o xhci-dbg.o 
 
 obj-$(CONFIG_USB_WHCI_HCD)	+= whci/
 
 obj-$(CONFIG_PCI)		+= pci-quirks.o
 
-obj-$(CONFIG_USB_EHCI_HCD)	+= ehci-hcd.o
+
+obj-$(CONFIG_USB_EHCI_HCD)	+= ehci-hcd.o 
 obj-$(CONFIG_USB_OXU210HP_HCD)	+= oxu210hp-hcd.o
 obj-$(CONFIG_USB_ISP116X_HCD)	+= isp116x-hcd.o
 obj-$(CONFIG_USB_ISP1362_HCD)	+= isp1362-hcd.o
