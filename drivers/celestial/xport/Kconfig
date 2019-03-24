@@ -1,0 +1,29 @@
+# drivers/celestial/xport/Kconfig
+
+menu "Celestial Xport Drivers"
+
+
+config CELESTIAL_XPORT
+	bool "Xport drive"
+	depends on ARCH_CELESTIAL
+	default n
+	help
+	Include support driver for Xport of celestial platform
+
+config CELESTIAL_XPORT_DEBUG
+	bool "Debugging"
+	depends on CELESTIAL_XPORT
+	help
+	This turns on low-level debugging for the celestial xport driver.
+	Normally, you should say 'N'.
+
+
+config XPORT_DEBUG_VERBOSE
+	int "Debugging verbosity (0 = quiet, 3 = noisy)"
+	depends on CELESTIAL_XPORT_DEBUG
+	default "0"
+	help
+	Determines the verbosity level of the xport debugging messages.
+
+
+endmenu
