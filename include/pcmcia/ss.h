@@ -25,6 +25,8 @@
 #include <linux/pci.h>
 #endif
 
+#define CSM18XX_PCMCIA
+
 /* Definitions for card status flags for GetStatus */
 #define SS_WRPROT	0x0001
 #define SS_CARDLOCK	0x0002
@@ -139,6 +141,22 @@ struct pccard_operations {
 	int (*set_socket)(struct pcmcia_socket *s, socket_state_t *state);
 	int (*set_io_map)(struct pcmcia_socket *s, struct pccard_io_map *io);
 	int (*set_mem_map)(struct pcmcia_socket *s, struct pccard_mem_map *mem);
+
+#ifdef CSM18XX_PCMCIA
+	/*** added by xm.chen ::: only for orion chip ****/
+	void (*set_cis_rmode)(void);	//setting for CIS reading
+	void (*set_cis_wmode)(void);	//setting for CIS writing
+	void (*set_comm_rmode)(void);	//setting for common memory reading
+	void (*set_comm_wmode)(void);	//setting for common memory writing
+	void (*set_io_mode)(void);		//setting for io mode;
+	/*** note: the addr is not virtual addr, but the absolute addr in pc card ****/
+	unsigned char (*read_cis)(unsigned int addr);
+	void (*write_cis)(unsigned char val, unsigned int addr);
+	unsigned char (*read_comm)(unsigned int addr);
+	void (*write_comm)(unsigned char val, unsigned int addr);
+	unsigned char (*read_io)(unsigned int addr);
+	void (*write_io)(unsigned char val, unsigned int addr);
+#endif
 };
 
 struct pcmcia_socket {
