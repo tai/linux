@@ -1,0 +1,19 @@
+# drivers/celestial/Kconfig
+
+menu "Celestial Device Drivers"
+
+source "drivers/celestial/df/Kconfig"
+
+source "drivers/celestial/xport/Kconfig"
+
+source "drivers/celestial/video/Kconfig"
+
+source "drivers/celestial/audio/Kconfig"
+
+source "drivers/celestial/peripheral/Kconfig"
+
+source "drivers/celestial/graphics/Kconfig"
+
+source "drivers/celestial/hdmi/Kconfig"
+
+endmenu
