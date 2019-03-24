@@ -307,5 +307,17 @@ config MTD_DOCPROBE_55AA
 	  LinuxBIOS or if you need to recover a DiskOnChip Millennium on which
 	  you have managed to wipe the first block.
 
+config MTD_SPIDEV
+        bool "CNC1800x spi flash support"
+		depends on !SPI
+        help
+          spi flash support for csm1800
+
+config SPI_CHARDEV
+        bool "CNC1800x slave device support"
+		depends on MTD_SPIDEV
+        help
+          If choose this option, then spi flash no longer works.
+
 endmenu
 
