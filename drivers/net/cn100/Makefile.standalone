@@ -1,0 +1,68 @@
+# Comment/uncomment the following line to disable/enable debugging
+# DEBUG = y
+CROSS-COMPILES = ARM
+
+# Add your debugging flag (or not) to CFLAGS
+ifeq ($(DEBUG),y)
+  DEBFLAGS = -O -g -D_RESERVED_MEM_ -D_CN100_MII_  # "-O" is needed to expand inlines
+else
+  DEBFLAGS = -O2 -D_RESERVED_MEM_ -D_CN100_MII_  
+endif
+
+# defines the compiler location
+ifeq ($(CROSS-COMPILES), ARM)
+	COMPILER_COMMAND_PREFIX = /jinfei/works/arm/tools/uclibs/bin/arm-linux-
+else
+	COMPILER_COMMAND_PREFIX =
+endif
+
+CC           = $(COMPILER_COMMAND_PREFIX)gcc
+CXX          = $(COMPILER_COMMAND_PREFIX)gcc
+LD           = $(COMPILER_COMMAND_PREFIX)ld
+AR           = $(COMPILER_COMMAND_PREFIX)ar
+STRIP        = $(COMPILER_COMMAND_PREFIX)strip
+OBJDUMP      = $(COMPILER_COMMAND_PREFIX)objdump
+OBJCOPY      = $(COMPILER_COMMAND_PREFIX)objcopy
+
+CFLAGS += $(DEBFLAGS) -I$(LDDINCDIR)
+
+ifneq ($(KERNELRELEASE),)
+# call from kernel build system
+
+cn100-objs := 	cn100_main.o 	\
+					cn100_hw.o		\
+					cn100_mem.o		\
+					cn100_hash.o	\
+					cn100_int.o		\
+					cn100_ioctl.o	\
+					cn100_phy.o		\
+					cn100_time.o
+
+obj-m	:= cn100.o
+
+else
+
+ifeq ($(CROSS-COMPILES), ARM)
+	KERNELDIR ?= /jinfei/works/arm/kernel/linux-2.6
+else
+	KERNELDIR ?= /lib/modules/$(shell uname -r)/build
+	# KERNELDIR ?= /jinfei/temp/linux-2.6.15
+endif
+
+PWD       := $(shell pwd)
+
+default:
+	$(MAKE) -C $(KERNELDIR) M=$(PWD) LDDINCDIR=$(PWD)/../include modules
+
+endif
+
+clean:
+	rm -rf *.o *~ core .depend .*.cmd *.ko *.mod.c .tmp_versions
+
+depend .depend dep:
+	$(CC) $(CFLAGS) -M *.c > .depend
+
+
+ifeq (.depend,$(wildcard .depend))
+include .depend
+endif
