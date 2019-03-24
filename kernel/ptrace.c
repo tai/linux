@@ -56,7 +56,7 @@ static void ptrace_untrace(struct task_struct *child)
 		    child->signal->group_stop_count)
 			__set_task_state(child, TASK_STOPPED);
 		else
-			signal_wake_up(child, 1);
+			ptrace_signal_wake_up(child, true);
 	}
 	spin_unlock(&child->sighand->siglock);
 }
@@ -80,6 +80,40 @@ void __ptrace_unlink(struct task_struct *child)
 		ptrace_untrace(child);
 }
 
+/* Ensure that nothing can wake it up, even SIGKILL */
+static bool ptrace_freeze_traced(struct task_struct *task, int kill)
+{
+	bool ret = true;
+
+	spin_lock_irq(&task->sighand->siglock);
+	if (task_is_stopped(task) && !__fatal_signal_pending(task))
+		task->state = __TASK_TRACED;
+	else if (!kill) {
+		if (task_is_traced(task) && !__fatal_signal_pending(task))
+			task->state = __TASK_TRACED;
+		else
+			ret = false;
+	}
+	spin_unlock_irq(&task->sighand->siglock);
+
+	return ret;
+}
+
+static void ptrace_unfreeze_traced(struct task_struct *task)
+{
+	if (task->state != __TASK_TRACED)
+		return;
+
+	WARN_ON(!task->ptrace || task->parent != current);
+
+	spin_lock_irq(&task->sighand->siglock);
+	if (__fatal_signal_pending(task))
+		wake_up_state(task, __TASK_TRACED);
+	else
+		task->state = TASK_TRACED;
+	spin_unlock_irq(&task->sighand->siglock);
+}
+
 /*
  * Check that we have indeed attached to the thing..
  */
@@ -95,25 +129,29 @@ int ptrace_check_attach(struct task_struct *child, int kill)
 	 * be changed by us so it's not changing right after this.
 	 */
 	read_lock(&tasklist_lock);
-	if ((child->ptrace & PT_PTRACED) && child->parent == current) {
-		ret = 0;
+	if (child->ptrace && child->parent == current) {
+		WARN_ON(child->state == __TASK_TRACED);
 		/*
 		 * child->sighand can't be NULL, release_task()
 		 * does ptrace_unlink() before __exit_signal().
 		 */
-		spin_lock_irq(&child->sighand->siglock);
-		if (task_is_stopped(child))
-			child->state = TASK_TRACED;
-		else if (!task_is_traced(child) && !kill)
-			ret = -ESRCH;
-		spin_unlock_irq(&child->sighand->siglock);
+		if (ptrace_freeze_traced(child, kill))
+			ret = 0;
 	}
 	read_unlock(&tasklist_lock);
 
-	if (!ret && !kill)
-		ret = wait_task_inactive(child, TASK_TRACED) ? 0 : -ESRCH;
+	if (!ret && !kill) {
+		if (!wait_task_inactive(child, __TASK_TRACED)) {
+			/*
+			 * This can only happen if may_ptrace_stop() fails and
+			 * ptrace_stop() changes ->state back to TASK_RUNNING,
+			 * so we should not worry about leaking __TASK_TRACED.
+			 */
+			WARN_ON(child->state == __TASK_TRACED);
+			ret = -ESRCH;
+		}
+	}
 
-	/* All systems go.. */
 	return ret;
 }
 
@@ -131,7 +169,7 @@ int __ptrace_may_access(struct task_struct *task, unsigned int mode)
 	 */
 	int dumpable = 0;
 	/* Don't let security modules deny introspection */
-	if (task == current)
+	if (same_thread_group(task, current))
 		return 0;
 	rcu_read_lock();
 	tcred = __task_cred(task);
@@ -149,7 +187,7 @@ int __ptrace_may_access(struct task_struct *task, unsigned int mode)
 	smp_rmb();
 	if (task->mm)
 		dumpable = get_dumpable(task->mm);
-	if (!dumpable && !capable(CAP_SYS_PTRACE))
+	if (dumpable != SUID_DUMP_USER && !capable(CAP_SYS_PTRACE))
 		return -EPERM;
 
 	return security_ptrace_access_check(task, mode);
@@ -478,6 +516,8 @@ static int ptrace_setsiginfo(struct task_struct *child, const siginfo_t *info)
 
 static int ptrace_resume(struct task_struct *child, long request, long data)
 {
+	bool need_siglock;
+
 	if (!valid_signal(data))
 		return -EIO;
 
@@ -505,8 +545,26 @@ static int ptrace_resume(struct task_struct *child, long request, long data)
 		user_disable_single_step(child);
 	}
 
+	/*
+	 * Change ->exit_code and ->state under siglock to avoid the race
+	 * with wait_task_stopped() in between; a non-zero ->exit_code will
+	 * wrongly look like another report from tracee.
+	 *
+	 * Note that we need siglock even if ->exit_code == data and/or this
+	 * status was not reported yet, the new status must not be cleared by
+	 * wait_task_stopped() after resume.
+	 *
+	 * If data == 0 we do not care if wait_task_stopped() reports the old
+	 * status and clears the code too; this can't race with the tracee, it
+	 * takes siglock after resume.
+	 */
+	need_siglock = data && !thread_group_empty(current);
+	if (need_siglock)
+		spin_lock_irq(&child->sighand->siglock);
 	child->exit_code = data;
-	wake_up_process(child);
+	wake_up_state(child, __TASK_TRACED);
+	if (need_siglock)
+		spin_unlock_irq(&child->sighand->siglock);
 
 	return 0;
 }
@@ -637,6 +695,8 @@ SYSCALL_DEFINE4(ptrace, long, request, long, pid, long, addr, long, data)
 		goto out_put_task_struct;
 
 	ret = arch_ptrace(child, request, addr, data);
+	if (ret || request != PTRACE_DETACH)
+		ptrace_unfreeze_traced(child);
 
  out_put_task_struct:
 	put_task_struct(child);
@@ -752,8 +812,11 @@ asmlinkage long compat_sys_ptrace(compat_long_t request, compat_long_t pid,
 	}
 
 	ret = ptrace_check_attach(child, request == PTRACE_KILL);
-	if (!ret)
+	if (!ret) {
 		ret = compat_arch_ptrace(child, request, addr, data);
+		if (ret || request != PTRACE_DETACH)
+			ptrace_unfreeze_traced(child);
+	}
 
  out_put_task_struct:
 	put_task_struct(child);

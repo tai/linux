@@ -2573,7 +2573,6 @@ struct sk_buff *skb_segment(struct sk_buff *skb, int features)
 		tail = nskb;
 
 		__copy_skb_header(nskb, skb);
-		nskb->mac_len = skb->mac_len;
 
 		/* nskb and skb might have different headroom */
 		if (nskb->ip_summed == CHECKSUM_PARTIAL)
@@ -2583,6 +2582,7 @@ struct sk_buff *skb_segment(struct sk_buff *skb, int features)
 		skb_set_network_header(nskb, skb->mac_len);
 		nskb->transport_header = (nskb->network_header +
 					  skb_network_header_len(skb));
+		nskb->mac_len = nskb->network_header - nskb->mac_header;
 		skb_copy_from_linear_data(skb, nskb->data, doffset);
 
 		if (fskb != skb_shinfo(skb)->frag_list)
@@ -2746,8 +2746,12 @@ int skb_gro_receive(struct sk_buff **head, struct sk_buff *skb)
 
 merge:
 	if (offset > headlen) {
-		skbinfo->frags[0].page_offset += offset - headlen;
-		skbinfo->frags[0].size -= offset - headlen;
+		unsigned int eat = offset - headlen;
+
+		skbinfo->frags[0].page_offset += eat;
+		skbinfo->frags[0].size -= eat;
+		skb->data_len -= eat;
+		skb->len -= eat;
 		offset = headlen;
 	}
 
@@ -2973,6 +2977,36 @@ int skb_cow_data(struct sk_buff *skb, int tailbits, struct sk_buff **trailer)
 }
 EXPORT_SYMBOL_GPL(skb_cow_data);
 
+static void sock_rmem_free(struct sk_buff *skb)
+{
+	struct sock *sk = skb->sk;
+
+	atomic_sub(skb->truesize, &sk->sk_rmem_alloc);
+}
+
+/*
+ * Note: We dont mem charge error packets (no sk_forward_alloc changes)
+ */
+int sock_queue_err_skb(struct sock *sk, struct sk_buff *skb)
+{
+	int len = skb->len;
+
+	if (atomic_read(&sk->sk_rmem_alloc) + skb->truesize >=
+	    (unsigned)sk->sk_rcvbuf)
+		return -ENOMEM;
+
+	skb_orphan(skb);
+	skb->sk = sk;
+	skb->destructor = sock_rmem_free;
+	atomic_add(skb->truesize, &sk->sk_rmem_alloc);
+
+	skb_queue_tail(&sk->sk_error_queue, skb);
+	if (!sock_flag(sk, SOCK_DEAD))
+		sk->sk_data_ready(sk, len);
+	return 0;
+}
+EXPORT_SYMBOL(sock_queue_err_skb);
+
 void skb_tstamp_tx(struct sk_buff *orig_skb,
 		struct skb_shared_hwtstamps *hwtstamps)
 {
@@ -3004,7 +3038,9 @@ void skb_tstamp_tx(struct sk_buff *orig_skb,
 	memset(serr, 0, sizeof(*serr));
 	serr->ee.ee_errno = ENOMSG;
 	serr->ee.ee_origin = SO_EE_ORIGIN_TIMESTAMPING;
+
 	err = sock_queue_err_skb(sk, skb);
+
 	if (err)
 		kfree_skb(skb);
 }

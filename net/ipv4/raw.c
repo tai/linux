@@ -459,6 +459,7 @@ static int raw_sendmsg(struct kiocb *iocb, struct sock *sk, struct msghdr *msg,
 	__be32 saddr;
 	u8  tos;
 	int err;
+	struct ip_options_data opt_copy;
 
 	err = -EMSGSIZE;
 	if (len > 0xFFFF)
@@ -519,8 +520,18 @@ static int raw_sendmsg(struct kiocb *iocb, struct sock *sk, struct msghdr *msg,
 	saddr = ipc.addr;
 	ipc.addr = daddr;
 
-	if (!ipc.opt)
-		ipc.opt = inet->opt;
+	if (!ipc.opt) {
+		struct ip_options_rcu *inet_opt;
+
+		rcu_read_lock();
+		inet_opt = rcu_dereference(inet->inet_opt);
+		if (inet_opt) {
+			memcpy(&opt_copy, inet_opt,
+			       sizeof(*inet_opt) + inet_opt->opt.optlen);
+			ipc.opt = &opt_copy.opt;
+		}
+		rcu_read_unlock();
+	}
 
 	if (ipc.opt) {
 		err = -EINVAL;
@@ -529,10 +540,10 @@ static int raw_sendmsg(struct kiocb *iocb, struct sock *sk, struct msghdr *msg,
 		 */
 		if (inet->hdrincl)
 			goto done;
-		if (ipc.opt->srr) {
+		if (ipc.opt->opt.srr) {
 			if (!daddr)
 				goto done;
-			daddr = ipc.opt->faddr;
+			daddr = ipc.opt->opt.faddr;
 		}
 	}
 	tos = RT_CONN_FLAGS(sk);
@@ -670,11 +681,8 @@ static int raw_recvmsg(struct kiocb *iocb, struct sock *sk, struct msghdr *msg,
 	if (flags & MSG_OOB)
 		goto out;
 
-	if (addr_len)
-		*addr_len = sizeof(*sin);
-
 	if (flags & MSG_ERRQUEUE) {
-		err = ip_recv_error(sk, msg, len);
+		err = ip_recv_error(sk, msg, len, addr_len);
 		goto out;
 	}
 
@@ -700,6 +708,7 @@ static int raw_recvmsg(struct kiocb *iocb, struct sock *sk, struct msghdr *msg,
 		sin->sin_addr.s_addr = ip_hdr(skb)->saddr;
 		sin->sin_port = 0;
 		memset(&sin->sin_zero, 0, sizeof(sin->sin_zero));
+		*addr_len = sizeof(*sin);
 	}
 	if (inet->cmsg_flags)
 		ip_cmsg_recv(msg, skb);

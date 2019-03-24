@@ -294,7 +294,8 @@ static struct sock *x25_find_listener(struct x25_address *addr,
 			 * Found a listening socket, now check the incoming
 			 * call user data vs this sockets call user data
 			 */
-			if(skb->len > 0 && x25_sk(s)->cudmatchlength > 0) {
+			if (x25_sk(s)->cudmatchlength > 0 &&
+				skb->len >= x25_sk(s)->cudmatchlength) {
 				if((memcmp(x25_sk(s)->calluserdata.cuddata,
 					skb->data,
 					x25_sk(s)->cudmatchlength)) == 0) {
@@ -1293,9 +1294,8 @@ static int x25_recvmsg(struct kiocb *iocb, struct socket *sock,
 	if (sx25) {
 		sx25->sx25_family = AF_X25;
 		sx25->sx25_addr   = x25->dest_addr;
+		msg->msg_namelen = sizeof(*sx25);
 	}
-
-	msg->msg_namelen = sizeof(struct sockaddr_x25);
 
 	lock_sock(sk);
 	x25_check_rbuf(sk);

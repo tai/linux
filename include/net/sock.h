@@ -231,6 +231,7 @@ struct sock {
 				sk_userlocks : 4,
 				sk_protocol  : 8,
 				sk_type      : 16;
+#define SK_PROTOCOL_MAX ((u8)~0U)
 	kmemcheck_bitfield_end(flags);
 	int			sk_rcvbuf;
 	socket_lock_t		sk_lock;
@@ -505,6 +506,8 @@ enum sock_flags {
 	SOCK_TIMESTAMPING_RAW_HARDWARE, /* %SOF_TIMESTAMPING_RAW_HARDWARE */
 	SOCK_TIMESTAMPING_SYS_HARDWARE, /* %SOF_TIMESTAMPING_SYS_HARDWARE */
 };
+
+#define SK_FLAGS_TIMESTAMP ((1UL << SOCK_TIMESTAMP) | (1UL << SOCK_TIMESTAMPING_RX_SOFTWARE))
 
 static inline void sock_copy_flags(struct sock *nsk, struct sock *osk)
 {
@@ -1354,20 +1357,7 @@ extern void sk_stop_timer(struct sock *sk, struct timer_list* timer);
 
 extern int sock_queue_rcv_skb(struct sock *sk, struct sk_buff *skb);
 
-static inline int sock_queue_err_skb(struct sock *sk, struct sk_buff *skb)
-{
-	/* Cast skb->rcvbuf to unsigned... It's pointless, but reduces
-	   number of warnings when compiling with -W --ANK
-	 */
-	if (atomic_read(&sk->sk_rmem_alloc) + skb->truesize >=
-	    (unsigned)sk->sk_rcvbuf)
-		return -ENOMEM;
-	skb_set_owner_r(skb, sk);
-	skb_queue_tail(&sk->sk_error_queue, skb);
-	if (!sock_flag(sk, SOCK_DEAD))
-		sk->sk_data_ready(sk, skb->len);
-	return 0;
-}
+extern int sock_queue_err_skb(struct sock *sk, struct sk_buff *skb);
 
 /*
  *	Recover an error report and clear atomically

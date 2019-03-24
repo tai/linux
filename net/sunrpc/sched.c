@@ -485,14 +485,18 @@ EXPORT_SYMBOL_GPL(rpc_wake_up_next);
  */
 void rpc_wake_up(struct rpc_wait_queue *queue)
 {
-	struct rpc_task *task, *next;
 	struct list_head *head;
 
 	spin_lock_bh(&queue->lock);
 	head = &queue->tasks[queue->maxpriority];
 	for (;;) {
-		list_for_each_entry_safe(task, next, head, u.tk_wait.list)
+		while (!list_empty(head)) {
+			struct rpc_task *task;
+			task = list_first_entry(head,
+					struct rpc_task,
+					u.tk_wait.list);
 			rpc_wake_up_task_queue_locked(queue, task);
+		}
 		if (head == &queue->tasks[0])
 			break;
 		head--;
@@ -510,13 +514,16 @@ EXPORT_SYMBOL_GPL(rpc_wake_up);
  */
 void rpc_wake_up_status(struct rpc_wait_queue *queue, int status)
 {
-	struct rpc_task *task, *next;
 	struct list_head *head;
 
 	spin_lock_bh(&queue->lock);
 	head = &queue->tasks[queue->maxpriority];
 	for (;;) {
-		list_for_each_entry_safe(task, next, head, u.tk_wait.list) {
+		while (!list_empty(head)) {
+			struct rpc_task *task;
+			task = list_first_entry(head,
+					struct rpc_task,
+					u.tk_wait.list);
 			task->tk_status = status;
 			rpc_wake_up_task_queue_locked(queue, task);
 		}
@@ -784,6 +791,7 @@ static void rpc_init_task(struct rpc_task *task, const struct rpc_task_setup *ta
 	/* Initialize retry counters */
 	task->tk_garb_retry = 2;
 	task->tk_cred_retry = 2;
+	task->tk_rebind_retry = 2;
 
 	task->tk_priority = task_setup_data->priority - RPC_PRIORITY_LOW;
 	task->tk_owner = current->tgid;

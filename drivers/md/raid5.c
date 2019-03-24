@@ -1452,7 +1452,8 @@ static int resize_stripes(raid5_conf_t *conf, int newsize)
 
 	conf->slab_cache = sc;
 	conf->active_name = 1-conf->active_name;
-	conf->pool_size = newsize;
+	if (!err)
+		conf->pool_size = newsize;
 	return err;
 }
 
@@ -3038,12 +3039,16 @@ static void handle_stripe5(struct stripe_head *sh)
 	/* check if the array has lost two devices and, if so, some requests might
 	 * need to be failed
 	 */
-	if (s.failed > 1 && s.to_read+s.to_write+s.written)
-		handle_failed_stripe(conf, sh, &s, disks, &return_bi);
-	if (s.failed > 1 && s.syncing) {
-		md_done_sync(conf->mddev, STRIPE_SECTORS,0);
-		clear_bit(STRIPE_SYNCING, &sh->state);
-		s.syncing = 0;
+	if (s.failed > 1) {
+		sh->check_state = 0;
+		sh->reconstruct_state = 0;
+		if (s.to_read+s.to_write+s.written)
+			handle_failed_stripe(conf, sh, &s, disks, &return_bi);
+		if (s.syncing) {
+			md_done_sync(conf->mddev, STRIPE_SECTORS,0);
+			clear_bit(STRIPE_SYNCING, &sh->state);
+			s.syncing = 0;
+		}
 	}
 
 	/* might be able to return some write requests if the parity block
@@ -3314,12 +3319,16 @@ static void handle_stripe6(struct stripe_head *sh)
 	/* check if the array has lost >2 devices and, if so, some requests
 	 * might need to be failed
 	 */
-	if (s.failed > 2 && s.to_read+s.to_write+s.written)
-		handle_failed_stripe(conf, sh, &s, disks, &return_bi);
-	if (s.failed > 2 && s.syncing) {
-		md_done_sync(conf->mddev, STRIPE_SECTORS,0);
-		clear_bit(STRIPE_SYNCING, &sh->state);
-		s.syncing = 0;
+	if (s.failed > 2) {
+		sh->check_state = 0;
+		sh->reconstruct_state = 0;
+		if (s.to_read+s.to_write+s.written)
+			handle_failed_stripe(conf, sh, &s, disks, &return_bi);
+		if (s.syncing) {
+			md_done_sync(conf->mddev, STRIPE_SECTORS,0);
+			clear_bit(STRIPE_SYNCING, &sh->state);
+			s.syncing = 0;
+		}
 	}
 
 	/*
@@ -3370,6 +3379,8 @@ static void handle_stripe6(struct stripe_head *sh)
 				pr_debug("Writing block %d\n", i);
 				BUG_ON(!test_bit(R5_UPTODATE, &dev->flags));
 				set_bit(R5_Wantwrite, &dev->flags);
+				if (s.failed > 1)
+					continue;
 				if (!test_bit(R5_Insync, &dev->flags) ||
 				    ((i == sh->pd_idx || i == qd_idx) &&
 				      s.failed == 0))

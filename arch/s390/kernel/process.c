@@ -32,7 +32,6 @@
 #include <linux/kernel_stat.h>
 #include <linux/syscalls.h>
 #include <linux/compat.h>
-#include <asm/compat.h>
 #include <asm/uaccess.h>
 #include <asm/pgtable.h>
 #include <asm/system.h>
@@ -262,7 +261,7 @@ asmlinkage void execve_tail(void)
 {
 	current->thread.fp_regs.fpc = 0;
 	if (MACHINE_HAS_IEEE)
-		asm volatile("sfpc %0,%0" : : "d" (0));
+		asm volatile("sfpc %0" : : "d" (0));
 }
 
 /*

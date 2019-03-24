@@ -652,6 +652,7 @@ static void ext4_put_super(struct super_block *sb)
 		dump_orphan_list(sb, sbi);
 	J_ASSERT(list_empty(&sbi->s_orphan));
 
+	sync_blockdev(sb->s_bdev);
 	invalidate_bdev(sb->s_bdev);
 	if (sbi->journal_bdev && sbi->journal_bdev != sb->s_bdev) {
 		/*
@@ -1705,17 +1706,16 @@ static int ext4_fill_flex_info(struct super_block *sb)
 	struct ext4_group_desc *gdp = NULL;
 	ext4_group_t flex_group_count;
 	ext4_group_t flex_group;
-	int groups_per_flex = 0;
+	unsigned int groups_per_flex = 0;
 	size_t size;
 	int i;
 
 	sbi->s_log_groups_per_flex = sbi->s_es->s_log_groups_per_flex;
-	groups_per_flex = 1 << sbi->s_log_groups_per_flex;
-
-	if (groups_per_flex < 2) {
+	if (sbi->s_log_groups_per_flex < 1 || sbi->s_log_groups_per_flex > 31) {
 		sbi->s_log_groups_per_flex = 0;
 		return 1;
 	}
+	groups_per_flex = 1 << sbi->s_log_groups_per_flex;
 
 	/* We allocate both existing and potentially added groups */
 	flex_group_count = ((sbi->s_groups_count + groups_per_flex - 1) +
@@ -1938,7 +1938,9 @@ static void ext4_orphan_cleanup(struct super_block *sb,
 				__func__, inode->i_ino, inode->i_size);
 			jbd_debug(2, "truncating inode %lu to %lld bytes\n",
 				  inode->i_ino, inode->i_size);
+			mutex_lock(&inode->i_mutex);
 			ext4_truncate(inode);
+			mutex_unlock(&inode->i_mutex);
 			nr_truncates++;
 		} else {
 			ext4_msg(sb, KERN_DEBUG,
@@ -1976,6 +1978,12 @@ static void ext4_orphan_cleanup(struct super_block *sb,
  * in the vfs.  ext4 inode has 48 bits of i_block in fsblock units,
  * so that won't be a limiting factor.
  *
+ * However there is other limiting factor. We do store extents in the form
+ * of starting block and length, hence the resulting length of the extent
+ * covering maximum file size must fit into on-disk format containers as
+ * well. Given that length is always by 1 unit bigger than max unit (because
+ * we count 0 as well) we have to lower the s_maxbytes by one fs block.
+ *
  * Note, this does *not* consider any metadata overhead for vfs i_blocks.
  */
 static loff_t ext4_max_size(int blkbits, int has_huge_files)
@@ -1997,10 +2005,13 @@ static loff_t ext4_max_size(int blkbits, int has_huge_files)
 		upper_limit <<= blkbits;
 	}
 
-	/* 32-bit extent-start container, ee_block */
-	res = 1LL << 32;
+	/*
+	 * 32-bit extent-start container, ee_block. We lower the maxbytes
+	 * by one fs block, so ee_len can cover the extent of maximum file
+	 * size
+	 */
+	res = (1LL << 32) - 1;
 	res <<= blkbits;
-	res -= 1;
 
 	/* Sanity check against vm- & vfs- imposed limits */
 	if (res > upper_limit)
@@ -2756,14 +2767,14 @@ static int ext4_fill_super(struct super_block *sb, void *data, int silent)
 				EXT4_SB(sb)->s_mount_state |= EXT4_ERROR_FS;
 				es->s_state |= cpu_to_le16(EXT4_ERROR_FS);
 				ext4_commit_super(sb, 1);
-				goto failed_mount4;
+				goto failed_mount_wq;
 			}
 		}
 	} else if (test_opt(sb, NOLOAD) && !(sb->s_flags & MS_RDONLY) &&
 	      EXT4_HAS_INCOMPAT_FEATURE(sb, EXT4_FEATURE_INCOMPAT_RECOVER)) {
 		ext4_msg(sb, KERN_ERR, "required journal recovery "
 		       "suppressed and not mounted read-only");
-		goto failed_mount4;
+		goto failed_mount_wq;
 	} else {
 		clear_opt(sbi->s_mount_opt, DATA_FLAGS);
 		set_opt(sbi->s_mount_opt, WRITEBACK_DATA);
@@ -2776,7 +2787,7 @@ static int ext4_fill_super(struct super_block *sb, void *data, int silent)
 	    !jbd2_journal_set_features(EXT4_SB(sb)->s_journal, 0, 0,
 				       JBD2_FEATURE_INCOMPAT_64BIT)) {
 		ext4_msg(sb, KERN_ERR, "Failed to set 64-bit journal feature");
-		goto failed_mount4;
+		goto failed_mount_wq;
 	}
 
 	if (test_opt(sb, JOURNAL_ASYNC_COMMIT)) {
@@ -2815,7 +2826,7 @@ static int ext4_fill_super(struct super_block *sb, void *data, int silent)
 		    (sbi->s_journal, 0, 0, JBD2_FEATURE_INCOMPAT_REVOKE)) {
 			ext4_msg(sb, KERN_ERR, "Journal does not support "
 			       "requested data journaling mode");
-			goto failed_mount4;
+			goto failed_mount_wq;
 		}
 	default:
 		break;

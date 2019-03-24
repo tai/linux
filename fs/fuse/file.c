@@ -885,6 +885,7 @@ static ssize_t fuse_fill_write_pages(struct fuse_req *req,
 		pagefault_enable();
 		flush_dcache_page(page);
 
+		iov_iter_advance(ii, tmp);
 		if (!tmp) {
 			unlock_page(page);
 			page_cache_release(page);
@@ -896,7 +897,6 @@ static ssize_t fuse_fill_write_pages(struct fuse_req *req,
 		req->pages[req->num_pages] = page;
 		req->num_pages++;
 
-		iov_iter_advance(ii, tmp);
 		count += tmp;
 		pos += tmp;
 		offset += tmp;
@@ -1664,7 +1664,7 @@ static int fuse_verify_ioctl_iov(struct iovec *iov, size_t count)
 	size_t n;
 	u32 max = FUSE_MAX_PAGES_PER_REQ << PAGE_SHIFT;
 
-	for (n = 0; n < count; n++) {
+	for (n = 0; n < count; n++, iov++) {
 		if (iov->iov_len > (size_t) max)
 			return -ENOMEM;
 		max -= iov->iov_len;

@@ -941,6 +941,7 @@ struct file {
 #ifdef CONFIG_EPOLL
 	/* Used by fs/eventpoll.c to link all the hooks to this file */
 	struct list_head	f_ep_links;
+	struct list_head	f_tfile_llink;
 #endif /* #ifdef CONFIG_EPOLL */
 	struct address_space	*f_mapping;
 #ifdef CONFIG_DEBUG_WRITECOUNT
@@ -1816,6 +1817,7 @@ extern int current_umask(void);
 /* /sys/fs */
 extern struct kobject *fs_kobj;
 
+#define MAX_RW_COUNT (INT_MAX & PAGE_CACHE_MASK)
 extern int rw_verify_area(int, struct file *, loff_t *, size_t);
 
 #define FLOCK_VERIFY_READ  1

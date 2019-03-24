@@ -546,11 +546,12 @@ out:
 
 static unsigned long randomize_stack_top(unsigned long stack_top)
 {
-	unsigned int random_variable = 0;
+	unsigned long random_variable = 0;
 
 	if ((current->flags & PF_RANDOMIZE) &&
 		!(current->personality & ADDR_NO_RANDOMIZE)) {
-		random_variable = get_random_int() & STACK_RND_MASK;
+		random_variable = (unsigned long) get_random_int();
+		random_variable &= STACK_RND_MASK;
 		random_variable <<= PAGE_SHIFT;
 	}
 #ifdef CONFIG_STACK_GROWSUP
@@ -675,16 +676,16 @@ static int load_elf_binary(struct linux_binprm *bprm, struct pt_regs *regs)
 			if (file_permission(interpreter, MAY_READ) < 0)
 				bprm->interp_flags |= BINPRM_FLAGS_ENFORCE_NONDUMP;
 
-			retval = kernel_read(interpreter, 0, bprm->buf,
-					     BINPRM_BUF_SIZE);
-			if (retval != BINPRM_BUF_SIZE) {
+			/* Get the exec headers */
+			retval = kernel_read(interpreter, 0,
+					     (void *)&loc->interp_elf_ex,
+					     sizeof(loc->interp_elf_ex));
+			if (retval != sizeof(loc->interp_elf_ex)) {
 				if (retval >= 0)
 					retval = -EIO;
 				goto out_free_dentry;
 			}
 
-			/* Get the exec headers */
-			loc->interp_elf_ex = *((struct elfhdr *)bprm->buf);
 			break;
 		}
 		elf_ppnt++;
@@ -1452,7 +1453,7 @@ static int fill_thread_core_info(struct elf_thread_core_info *t,
 	for (i = 1; i < view->n; ++i) {
 		const struct user_regset *regset = &view->regsets[i];
 		do_thread_regset_writeback(t->task, regset);
-		if (regset->core_note_type &&
+		if (regset->core_note_type && regset->get &&
 		    (!regset->active || regset->active(t->task, regset))) {
 			int ret;
 			size_t size = regset->n * regset->size;
@@ -1699,30 +1700,19 @@ static int elf_note_info_init(struct elf_note_info *info)
 		return 0;
 	info->psinfo = kmalloc(sizeof(*info->psinfo), GFP_KERNEL);
 	if (!info->psinfo)
-		goto notes_free;
+		return 0;
 	info->prstatus = kmalloc(sizeof(*info->prstatus), GFP_KERNEL);
 	if (!info->prstatus)
-		goto psinfo_free;
+		return 0;
 	info->fpu = kmalloc(sizeof(*info->fpu), GFP_KERNEL);
 	if (!info->fpu)
-		goto prstatus_free;
+		return 0;
 #ifdef ELF_CORE_COPY_XFPREGS
 	info->xfpu = kmalloc(sizeof(*info->xfpu), GFP_KERNEL);
 	if (!info->xfpu)
-		goto fpu_free;
+		return 0;
 #endif
 	return 1;
-#ifdef ELF_CORE_COPY_XFPREGS
- fpu_free:
-	kfree(info->fpu);
-#endif
- prstatus_free:
-	kfree(info->prstatus);
- psinfo_free:
-	kfree(info->psinfo);
- notes_free:
-	kfree(info->notes);
-	return 0;
 }
 
 static int fill_note_info(struct elfhdr *elf, int phdrs,

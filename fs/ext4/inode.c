@@ -1112,6 +1112,15 @@ void ext4_da_update_reserve_space(struct inode *inode,
 		used = ei->i_reserved_data_blocks;
 	}
 
+	if (unlikely(ei->i_allocated_meta_blocks > ei->i_reserved_meta_blocks)) {
+		ext4_msg(inode->i_sb, KERN_NOTICE, "%s: ino %lu, allocated %d "
+			 "with only %d reserved metadata blocks\n", __func__,
+			 inode->i_ino, ei->i_allocated_meta_blocks,
+			 ei->i_reserved_meta_blocks);
+		WARN_ON(1);
+		ei->i_allocated_meta_blocks = ei->i_reserved_meta_blocks;
+	}
+
 	/* Update per-inode reservations */
 	ei->i_reserved_data_blocks -= used;
 	used += ei->i_allocated_meta_blocks;
@@ -2661,13 +2670,27 @@ static int __ext4_journalled_writepage(struct page *page,
 	page_bufs = page_buffers(page);
 	BUG_ON(!page_bufs);
 	walk_page_buffers(handle, page_bufs, 0, len, NULL, bget_one);
-	/* As soon as we unlock the page, it can go away, but we have
-	 * references to buffers so we are safe */
+	/*
+	 * We need to release the page lock before we start the
+	 * journal, so grab a reference so the page won't disappear
+	 * out from under us.
+	 */
+	get_page(page);
 	unlock_page(page);
 
 	handle = ext4_journal_start(inode, ext4_writepage_trans_blocks(inode));
 	if (IS_ERR(handle)) {
 		ret = PTR_ERR(handle);
+		put_page(page);
+		goto out_no_pagelock;
+	}
+
+	lock_page(page);
+	put_page(page);
+	if (page->mapping != mapping) {
+		/* The page got truncated from under us */
+		ext4_journal_stop(handle);
+		ret = 0;
 		goto out;
 	}
 
@@ -2685,6 +2708,8 @@ static int __ext4_journalled_writepage(struct page *page,
 	walk_page_buffers(handle, page_bufs, 0, len, NULL, bput_one);
 	ext4_set_inode_state(inode, EXT4_STATE_JDATA);
 out:
+	unlock_page(page);
+out_no_pagelock:
 	return ret;
 }
 
@@ -3228,7 +3253,7 @@ static int ext4_da_write_end(struct file *file,
 	 */
 
 	new_i_size = pos + copied;
-	if (new_i_size > EXT4_I(inode)->i_disksize) {
+	if (copied && new_i_size > EXT4_I(inode)->i_disksize) {
 		if (ext4_da_should_update_i_disksize(page, end)) {
 			down_write(&EXT4_I(inode)->i_data_sem);
 			if (new_i_size > EXT4_I(inode)->i_disksize) {
@@ -5112,6 +5137,7 @@ static int ext4_do_update_inode(handle_t *handle,
 	struct ext4_inode_info *ei = EXT4_I(inode);
 	struct buffer_head *bh = iloc->bh;
 	int err = 0, rc, block;
+	int need_datasync = 0;
 
 	/* For fields not not tracking in the in-memory inode,
 	 * initialise them to zero for new inodes. */
@@ -5160,7 +5186,10 @@ static int ext4_do_update_inode(handle_t *handle,
 		raw_inode->i_file_acl_high =
 			cpu_to_le16(ei->i_file_acl >> 32);
 	raw_inode->i_file_acl_lo = cpu_to_le32(ei->i_file_acl);
-	ext4_isize_set(raw_inode, ei->i_disksize);
+	if (ei->i_disksize != ext4_isize(raw_inode)) {
+		ext4_isize_set(raw_inode, ei->i_disksize);
+		need_datasync = 1;
+	}
 	if (ei->i_disksize > 0x7fffffffULL) {
 		struct super_block *sb = inode->i_sb;
 		if (!EXT4_HAS_RO_COMPAT_FEATURE(sb,
@@ -5213,7 +5242,7 @@ static int ext4_do_update_inode(handle_t *handle,
 		err = rc;
 	ext4_clear_inode_state(inode, EXT4_STATE_NEW);
 
-	ext4_update_inode_fsync_trans(handle, inode, 0);
+	ext4_update_inode_fsync_trans(handle, inode, need_datasync);
 out_brelse:
 	brelse(bh);
 	ext4_std_error(inode->i_sb, err);

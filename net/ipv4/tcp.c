@@ -838,8 +838,7 @@ new_segment:
 wait_for_sndbuf:
 		set_bit(SOCK_NOSPACE, &sk->sk_socket->flags);
 wait_for_memory:
-		if (copied)
-			tcp_push(sk, flags & ~MSG_MORE, mss_now, TCP_NAGLE_PUSH);
+		tcp_push(sk, flags & ~MSG_MORE, mss_now, TCP_NAGLE_PUSH);
 
 		if ((err = sk_stream_wait_memory(sk, &timeo)) != 0)
 			goto do_error;
@@ -848,7 +847,7 @@ wait_for_memory:
 	}
 
 out:
-	if (copied)
+	if (copied && !(flags & MSG_SENDPAGE_NOTLAST))
 		tcp_push(sk, flags, mss_now, tp->nonagle);
 	return copied;
 
@@ -2827,7 +2826,11 @@ int tcp_md5_hash_skb_data(struct tcp_md5sig_pool *hp,
 
 	for (i = 0; i < shi->nr_frags; ++i) {
 		const struct skb_frag_struct *f = &shi->frags[i];
-		sg_set_page(&sg, f->page, f->size, f->page_offset);
+		unsigned int offset = f->page_offset;
+		struct page *page = f->page + (offset >> PAGE_SHIFT);
+
+		sg_set_page(&sg, page, f->size,
+			    offset_in_page(offset));
 		if (crypto_hash_update(desc, &sg, f->size))
 			return 1;
 	}

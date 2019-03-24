@@ -641,6 +641,16 @@ static inline int skb_cloned(const struct sk_buff *skb)
 	       (atomic_read(&skb_shinfo(skb)->dataref) & SKB_DATAREF_MASK) != 1;
 }
 
+static inline int skb_unclone(struct sk_buff *skb, gfp_t pri)
+{
+	might_sleep_if(pri & __GFP_WAIT);
+
+	if (skb_cloned(skb))
+		return pskb_expand_head(skb, 0, 0, pri);
+
+	return 0;
+}
+
 /**
  *	skb_header_cloned - is the header a clone
  *	@skb: buffer to check
@@ -1311,6 +1321,16 @@ static inline void skb_set_mac_header(struct sk_buff *skb, const int offset)
 	skb->mac_header = skb->data + offset;
 }
 #endif /* NET_SKBUFF_DATA_USES_OFFSET */
+
+static inline void skb_mac_header_rebuild(struct sk_buff *skb)
+{
+	if (skb_mac_header_was_set(skb)) {
+		const unsigned char *old_mac = skb_mac_header(skb);
+
+		skb_set_mac_header(skb, -skb->mac_len);
+		memmove(skb_mac_header(skb), old_mac, skb->mac_len);
+	}
+}
 
 static inline int skb_transport_offset(const struct sk_buff *skb)
 {

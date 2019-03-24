@@ -821,12 +821,19 @@ int netlink_attachskb(struct sock *sk, struct sk_buff *skb,
 	return 0;
 }
 
-int netlink_sendskb(struct sock *sk, struct sk_buff *skb)
+static int __netlink_sendskb(struct sock *sk, struct sk_buff *skb)
 {
 	int len = skb->len;
 
 	skb_queue_tail(&sk->sk_receive_queue, skb);
 	sk->sk_data_ready(sk, len);
+	return len;
+}
+
+int netlink_sendskb(struct sock *sk, struct sk_buff *skb)
+{
+	int len = __netlink_sendskb(sk, skb);
+
 	sock_put(sk);
 	return len;
 }
@@ -951,8 +958,7 @@ static inline int netlink_broadcast_deliver(struct sock *sk,
 	if (atomic_read(&sk->sk_rmem_alloc) <= sk->sk_rcvbuf &&
 	    !test_bit(0, &nlk->state)) {
 		skb_set_owner_r(skb, sk);
-		skb_queue_tail(&sk->sk_receive_queue, skb);
-		sk->sk_data_ready(sk, skb->len);
+		__netlink_sendskb(sk, skb);
 		return atomic_read(&sk->sk_rmem_alloc) > sk->sk_rcvbuf;
 	}
 	return -1;
@@ -1297,7 +1303,8 @@ static int netlink_sendmsg(struct kiocb *kiocb, struct socket *sock,
 			return -EINVAL;
 		dst_pid = addr->nl_pid;
 		dst_group = ffs(addr->nl_groups);
-		if (dst_group && !netlink_capable(sock, NL_NONROOT_SEND))
+		if ((dst_group || dst_pid) &&
+		    !netlink_capable(sock, NL_NONROOT_SEND))
 			return -EPERM;
 	} else {
 		dst_pid = nlk->dst_pid;
@@ -1393,8 +1400,6 @@ static int netlink_recvmsg(struct kiocb *kiocb, struct socket *sock,
 			data_skb = skb_shinfo(skb)->frag_list;
 	}
 #endif
-
-	msg->msg_namelen = 0;
 
 	copied = data_skb->len;
 	if (len < copied) {
@@ -1665,10 +1670,8 @@ static int netlink_dump(struct sock *sk)
 
 		if (sk_filter(sk, skb))
 			kfree_skb(skb);
-		else {
-			skb_queue_tail(&sk->sk_receive_queue, skb);
-			sk->sk_data_ready(sk, skb->len);
-		}
+		else
+			__netlink_sendskb(sk, skb);
 		return 0;
 	}
 
@@ -1680,10 +1683,8 @@ static int netlink_dump(struct sock *sk)
 
 	if (sk_filter(sk, skb))
 		kfree_skb(skb);
-	else {
-		skb_queue_tail(&sk->sk_receive_queue, skb);
-		sk->sk_data_ready(sk, skb->len);
-	}
+	else
+		__netlink_sendskb(sk, skb);
 
 	if (cb->done)
 		cb->done(cb);
