@@ -1,0 +1,53 @@
+
+menu "Celestial Video Drivers"
+
+if ARCH_CELESTIAL
+config CELESTIAL_VIDEO
+	bool "CNC1800L Video"
+	depends on ARCH_CELESTIAL
+	default y
+	help 
+	    Include support drvier for video of celestial platform.
+endif
+
+if ARCH_CELESTIALSEMI
+config CELESTIAL_VIDEO
+	bool "CSM1800H Video"
+	depends on ARCH_CELESTIALSEMI
+	default y
+	help 
+	    Include support drvier for Video of celestial platform.
+endif
+
+config VIDEO_NUM
+	int "Video Number"
+	depends on CELESTIAL_VIDEO
+	range 1 2
+	default 1
+	help
+	    The number of video supported by video decoder, can be set to 1 or 2.
+
+config VIDEO_CPB_SIZE
+	hex "Video CPB Size"
+	depends on CELESTIAL_VIDEO
+	range 0x400000 0x1000000
+	default 0x400000
+	help
+	    Compressed picture buffer size of one video, range from 0x400000 to 0xc00000.
+
+config CELESTIAL_VIDEO_DEBUG
+	bool "Video Debugging"
+	depends on CELESTIAL_VIDEO
+	help
+	    This turns on low-level debugging for the celestial video driver.
+	    Normally, you should say 'N'.
+
+
+config VIDEO_DEBUG_VERBOSE
+	int "VIDEO Debugging verbosity (0 = quiet, 3 = noisy)"
+	depends on CELESTIAL_VIDEO_DEBUG
+	default "0"
+	help
+	    Determines the verbosity level of the video debugging messages.
+
+endmenu
