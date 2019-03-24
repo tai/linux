@@ -1,0 +1,43 @@
+# drivers/celestial/audio/Kconfig
+
+menu "Celestial Audio Drivers"
+
+config CELESTIAL_AUDIO
+	bool "CSM1800L Audio"
+	depends on ARCH_CELESTIAL
+	default y
+	help 
+	    Include support drvier for Audio of celestial platform
+
+config AUDIO_NUM
+	int "Audio Number"
+	depends on CELESTIAL_AUDIO
+	range 1 8
+	default 1
+	help
+	    Number of audio supported by audio decoder. Range from 1 to 8.
+
+config AUDIO_CAB_SIZE
+	hex "Audio CAB Size"
+	depends on CELESTIAL_AUDIO
+	range 0x18000 0x400000
+	default 0x18000
+	help
+	    Compressed audio buffer size for one audio. Range from 0x18000 to 0x400000.
+
+config CELESTIAL_AUDIO_DEBUG
+	bool "Audio Debugging"
+	depends on CELESTIAL_AUDIO
+	help
+	    This turns on low-level debugging for the celestial audio driver.
+	    Normally, you should say 'N'.
+
+
+config AUDIO_DEBUG_VERBOSE
+	int "Audio Debugging verbosity (0 = quiet, 3 = noisy)"
+	depends on CELESTIAL_AUDIO_DEBUG
+	default "0"
+	help
+	    Determines the verbosity level of the audio debugging messages.
+
+endmenu
