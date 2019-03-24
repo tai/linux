@@ -1,0 +1,161 @@
+#
+# Character device configuration
+#
+
+menu "Celestial Platform peripheral devices"
+
+config CELESTIAL_SCI
+	bool "Smart Card"
+	depends on ARCH_CELESTIAL
+	default y
+    help 
+      Include support drvier for smartcard of celestial platform
+
+config CELESTIAL_SCI_DEBUG
+       bool "Debugging Smart Card"
+       depends on CELESTIAL_SCI
+       help
+         This turns on low-level debugging for the celestial Smart Card driver.
+           Normally, you should say 'N'.
+
+
+config SCI_DEBUG_VERBOSE
+       int "Smart Card Debugging verbosity (0 = quiet, 3 = noisy)"
+       depends on CELESTIAL_SCI_DEBUG
+       default "0"
+       help
+         Determines the verbosity level of the SCI debugging messages.
+
+config CELESTIAL_I2C
+	bool "I2C"
+	depends on ARCH_CELESTIAL
+	default y
+    help
+      Include support drvier for I2C of celestial platform
+
+config CNC18XX_I2C_DEV2
+	bool "I2C_TWO"
+	depends on ARCH_CELESTIAL
+	default n
+    help
+      Include support drvier for I2C2 of celestial platform
+ 
+config CELESTIAL_I2C_DEBUG
+    bool "Debugging I2C device"
+    depends on CELESTIAL_I2C
+    help
+      This turns on low-level debugging for clestial I2C driver.
+           Normally, you should say 'N'.
+    
+config I2C_DEBUG_VERBOSE
+       int "I2C Debugging verbosity (0 = quiet, 3 = noisy)"
+       depends on CELESTIAL_I2C_DEBUG
+       default "0"
+       help
+         Determines the verbosity level of the I2C debugging messages.
+
+config CNC18XX_I2C_EEPROM
+	bool "I2C based EEPROM support"
+	depends on CELESTIAL_I2C
+	help 
+		Include support driver for EEPROM which is based I2C on celestial platform
+
+
+config CNC18XX_I2C_EEPROM_CHIP_1_ADDR
+       hex  "EEPROM i2c address"
+       depends on CNC18XX_I2C_EEPROM
+       default 0x50
+
+config CNC18XX_I2C_EEPROM_SUBADDR_LEN
+       int  "EEPROM sub address length (in bytes)"
+       depends on CNC18XX_I2C_EEPROM
+       default 2
+
+config CNC18XX_I2C_EEPROM_PAGE_SIZE
+       int  "EEPROM page size (in bytes)"
+       depends on CNC18XX_I2C_EEPROM
+       default 32
+
+config CNC18XX_I2C_EEPROM_SLEEP_TIME
+       int  "EEPROM wait time after write (in milliseconds)."
+       depends on CNC18XX_I2C_EEPROM
+       default 5
+
+
+config CNC18XX_I2C_MULTI_EEPROM
+	bool "Support MULTI EEPROM on I2C"
+	depends on CNC18XX_I2C_EEPROM
+	help 
+		Include support Multi EEPROMs on celestial platform
+
+
+config CNC18XX_I2C_EEPROM_CHIP_2_ADDR
+       hex  "Second EEPROM i2c address"
+       depends on CNC18XX_I2C_MULTI_EEPROM
+       default 0x54
+
+config CNC18XX_I2C_EEPROM_2_SUBADDR_LEN
+       int  "Second EEPROM sub address length (in bytes)"
+       depends on CNC18XX_I2C_EEPROM && CNC18XX_I2C_MULTI_EEPROM
+       default 2
+
+config CNC18XX_I2C_EEPROM_2_PAGE_SIZE
+       int  "Second EEPROM page size (in bytes)"
+       depends on CNC18XX_I2C_EEPROM && CNC18XX_I2C_MULTI_EEPROM
+       default 256
+
+config CNC18XX_I2C_EEPROM_2_SLEEP_TIME
+       int  "Second EEPROM wait time after write (in milliseconds)."
+       depends on CNC18XX_I2C_EEPROM && CNC18XX_I2C_MULTI_EEPROM
+       default 5
+
+
+config CELESTIAL_GPIO
+	bool	"GPIO driver"
+	depends on ARCH_CELESTIAL
+	default y
+    help        
+      Include support drvier for GPIO of celestial platform
+
+config GPIO_INTERRUPT_SUPPORT
+	bool "GPIO interrupt"
+	depends on CELESTIAL_GPIO
+	default n
+	help 
+		Support GPIO interrupts
+
+config VGA_SWITCHER_SUPPORT
+	bool "vga switcher"
+	depends on GPIO_INTERRUPT_SUPPORT
+	default n
+	help 
+		Support VGA Switcher Function by using GPIO interrupt
+
+
+
+config CELESTIAL_FPC
+	bool "FPC driver"
+	depends on ARCH_CELESTIAL
+	select CELESTIAL_GPIO
+	default y
+    help
+      Include support drvier for FPC of celestial platform
+
+
+config CELESTIAL_WDT
+	bool "WatchDog driver"
+	depends on ARCH_CELESTIAL
+	default y
+    help
+      Include support drvier for WatchDog of celestial platform
+
+config CELESTIAL_SEC
+	bool "Secure driver"
+	depends on ARCH_CELESTIAL
+	default y
+    help
+      Include support drvier for Secure id of celestial platform
+
+
+endmenu
+
