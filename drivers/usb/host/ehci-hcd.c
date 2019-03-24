@@ -1118,6 +1118,11 @@ MODULE_LICENSE ("GPL");
 #define	PLATFORM_DRIVER		ehci_fsl_driver
 #endif
 
+#ifdef CONFIG_USB_CNC18XX_EHCI
+#include "ehci-cnc18xx.c"
+#define PLATFORM_DRIVER		ehci_hcd_cnc18xx_driver
+#endif
+
 #ifdef CONFIG_SOC_AU1200
 #include "ehci-au1xxx.c"
 #define	PLATFORM_DRIVER		ehci_hcd_au1xxx_driver
