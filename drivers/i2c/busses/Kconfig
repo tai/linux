@@ -344,6 +344,15 @@ config I2C_DAVINCI
 	  devices such as DaVinci NIC.
 	  For details please see http://www.ti.com/davinci
 
+config I2C_CNC18XX
+        tristate "CNC18xx I2C driver"
+        depends on ARCH_CELESTIAL
+        help
+          Support for CNC18XX I2C controller driver.
+
+          This driver can also be built as a module.  If so, the module
+          will be called i2c-cnc18xx.
+
 config I2C_DESIGNWARE
 	tristate "Synopsys DesignWare"
 	depends on HAVE_CLK
