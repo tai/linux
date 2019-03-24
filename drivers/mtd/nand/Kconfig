@@ -482,4 +482,10 @@ config MTD_NAND_W90P910
 	  This enables the driver for the NAND Flash on evaluation board based
 	  on w90p910.
 
+config MTD_NAND_CELESTIAL
+	tristate "Support for NAND on celestial board."
+	depends on ARCH_CELESTIAL && MTD_PARTITIONS
+	help
+	  This enables the driver for the NAND Flash on celestial's csm18xx board based.
+
 endif # MTD_NAND
