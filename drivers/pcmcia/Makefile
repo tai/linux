@@ -78,3 +78,5 @@ pxa2xx-obj-$(CONFIG_MACH_E740)			+= pxa2xx_e740.o
 pxa2xx-obj-$(CONFIG_MACH_STARGATE2)		+= pxa2xx_stargate2.o
 
 obj-$(CONFIG_PCMCIA_PXA2XX)			+= pxa2xx_core.o $(pxa2xx-obj-y)
+
+obj-$(CONFIG_CNC18XX_PCMCIA)          += soc_common.o  cnc18xx_socket.o

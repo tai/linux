@@ -170,7 +170,22 @@ int pcmcia_read_cis_mem(struct pcmcia_socket *s, int attr, u_int addr,
 	    flags |= MAP_ATTRIB;
 	    inc++;
 	    addr *= 2;
+#ifdef CSM18XX_PCMCIA
+	    s->ops->set_cis_rmode();
+#endif
 	}
+#ifdef CSM18XX_PCMCIA
+	else
+	    s->ops->set_comm_rmode();
+
+	for ( ; len > 0; len--, buf++, addr += inc) {
+	    if(attr)
+		*buf = s->ops->read_cis(addr);
+	    else
+		*buf = s->ops->read_comm(addr);
+//printk("    addr:0x%x	*buf:0x%02x.\n",(unsigned int)addr, *buf);
+	}
+#else
 
 	card_offset = addr & ~(s->map_size-1);
 	while (len) {
@@ -189,6 +204,7 @@ int pcmcia_read_cis_mem(struct pcmcia_socket *s, int attr, u_int addr,
 	    card_offset += s->map_size;
 	    addr = 0;
 	}
+#endif
     }
     cs_dbg(s, 3, "  %#2.2x %#2.2x %#2.2x %#2.2x ...\n",
 	  *(u_char *)(ptr+0), *(u_char *)(ptr+1),
@@ -215,6 +231,17 @@ void pcmcia_write_cis_mem(struct pcmcia_socket *s, int attr, u_int addr,
 	    flags = ICTRL0_AUTOINC;
 	}
 
+#ifdef CSM18XX_PCMCIA
+	s->ops->set_comm_wmode();
+	s->ops->write_comm(flags, CISREG_ICTRL0);
+	s->ops->write_comm(addr & 0xff, CISREG_IADDR0);
+	s->ops->write_comm((addr>>8) & 0xff, CISREG_IADDR1);
+	s->ops->write_comm((addr>>16) & 0xff, CISREG_IADDR2);
+	s->ops->write_comm((addr>>24) & 0xff, CISREG_IADDR3);
+
+	for ( ; len > 0; len--, buf++)
+	    s->ops->write_comm(*buf, CISREG_IDATA0);
+#else
 	sys = set_cis_map(s, 0, MAP_ACTIVE | ((cis_width) ? MAP_16BIT : 0));
 	if (!sys)
 		return; /* FIXME: Error */
@@ -226,6 +253,7 @@ void pcmcia_write_cis_mem(struct pcmcia_socket *s, int attr, u_int addr,
 	writeb((addr>>24) & 0xff, sys+CISREG_IADDR3);
 	for ( ; len > 0; len--, buf++)
 	    writeb(*buf, sys+CISREG_IDATA0);
+#endif
     } else {
 	u_int inc = 1, card_offset, flags;
 
@@ -234,8 +262,21 @@ void pcmcia_write_cis_mem(struct pcmcia_socket *s, int attr, u_int addr,
 	    flags |= MAP_ATTRIB;
 	    inc++;
 	    addr *= 2;
+#ifdef CSM18XX_PCMCIA
+	    s->ops->set_cis_wmode();
+#endif
 	}
+#ifdef CSM18XX_PCMCIA
+	else
+	    s->ops->set_comm_wmode();
 
+	for ( ; len > 0; len--, buf++, addr += inc) {
+	    if(attr)
+		s->ops->write_cis(*buf, addr);
+	    else
+		s->ops->write_comm(*buf, addr);
+	}
+#else
 	card_offset = addr & ~(s->map_size-1);
 	while (len) {
 	    sys = set_cis_map(s, card_offset, flags);
@@ -252,6 +293,7 @@ void pcmcia_write_cis_mem(struct pcmcia_socket *s, int attr, u_int addr,
 	    card_offset += s->map_size;
 	    addr = 0;
 	}
+#endif
     }
 }
 EXPORT_SYMBOL(pcmcia_write_cis_mem);
