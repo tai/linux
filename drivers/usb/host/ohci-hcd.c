@@ -1013,6 +1013,11 @@ MODULE_LICENSE ("GPL");
 #define PLATFORM_DRIVER		ohci_hcd_s3c2410_driver
 #endif
 
+#ifdef CONFIG_USB_CNC18XX_OHCI
+#include "ohci-cnc18xx.c"
+#define PLATFORM_DRIVER		ohci_hcd_cnc18xx_driver
+#endif
+
 #ifdef CONFIG_ARCH_OMAP
 #include "ohci-omap.c"
 #define PLATFORM_DRIVER		ohci_hcd_omap_driver
