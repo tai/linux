@@ -1,0 +1,30 @@
+#
+# Character device configuration
+#
+
+menu "Celestial Graphics driver"
+
+config CELESTIAL_GRAPHICS
+	bool "GRAPHICS(2D)"
+	depends on ARCH_CELESTIAL
+	default y
+    help 
+      Include support drvier for graphic of celestial platform
+
+config CELESTIAL_GRAPHICS_DEBUG
+       bool "Debugging 2D graphics engine"
+       depends on CELESTIAL_GRAPHICS
+       help
+         This turns on low-level debugging for the celestial graphics driver.
+           Normally, you should say 'N'.
+
+
+config GRAPHICS_DEBUG_VERBOSE
+       int "2D Engine Debugging verbosity (0 = quiet, 3 = noisy)"
+       depends on CELESTIAL_GRAPHICS_DEBUG
+       default "0"
+       help
+         Determines the verbosity level of the Graphics debugging messages.
+
+endmenu
+
