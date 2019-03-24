@@ -1,0 +1,48 @@
+menu "Cavium Celestials platform type"
+	depends on ARCH_CELESTIAL
+choice
+	prompt "Celestial platform Series SoC Version"
+	depends on ARCH_CELESTIAL
+	default MACH_CELESTIAL_CNC1800H
+
+config MACH_CELESTIAL_CNC1201
+	bool "Cavium Celestial CNC1201 SoC"
+	select CPU_ARM926T
+	help
+	  Include support for the Cavium Celestial CNC1201 platform.
+
+config MACH_CELESTIAL_CNC1800H
+	bool "Cavium Celestial CNC1800H SoC"
+	select CPU_ARM926T
+	help
+	  Include support for the Cavium Celestial CNC1800H platform.
+
+config MACH_CELESTIAL_CNC1800L
+	bool "Cavium Celestial CNC1800L SoC"
+	select CPU_V6 
+	help
+	  Include support for the Cavium Celestial CNC1800L platform.
+endchoice
+
+config CELESTIAL_TIGA_MINI
+	bool "Config for Celestial Tiga-Mini board"
+	depends on MACH_CELESTIAL_CNC1800L
+	default n
+	help
+	  If select this option, will use memory defines for Tiga-Mini board 
+
+config CELESTIAL_MEM_SIZE
+	depends on ARCH_CELESTIAL
+	int "Maximum Memory size (MB)"
+	range 128 1024
+	default "256"
+
+menu "Default Pinmux Setting"
+	depends on ARCH_CELESTIAL
+config PINMUX_UART2_DEFAULT_ENABLE
+	bool "UART2 Enable"
+	default n
+
+endmenu
+
+endmenu

@@ -34,6 +34,8 @@ ifeq ($(CONFIG_FRAME_POINTER),y)
 KBUILD_CFLAGS	+=-fno-omit-frame-pointer -mapcs -mno-sched-prolog
 endif
 
+KBUILD_CFLAGS +=-DUBOOT_UPGRADE_ALLOWED=$(UBOOT_UPGRADE_ALLOWED)
+
 ifeq ($(CONFIG_CPU_BIG_ENDIAN),y)
 KBUILD_CPPFLAGS	+= -mbig-endian
 AS		+= -EB
@@ -117,6 +119,7 @@ endif
 
 # Machine directory name.  This list is sorted alphanumerically
 # by CONFIG_* macro name.
+machine-$(CONFIG_ARCH_CELESTIAL) :=celestial
 machine-$(CONFIG_ARCH_AAEC2000)		:= aaec2000
 machine-$(CONFIG_ARCH_AT91)		:= at91
 machine-$(CONFIG_ARCH_BCMRING)		:= bcmring
