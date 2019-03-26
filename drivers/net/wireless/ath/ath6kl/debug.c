@@ -39,16 +39,12 @@ struct ath6kl_fwlog_slot {
 
 int ath6kl_printk(const char *level, const char *fmt, ...)
 {
-	struct va_format vaf;
 	va_list args;
 	int rtn;
 
 	va_start(args, fmt);
 
-	vaf.fmt = fmt;
-	vaf.va = &args;
-
-	rtn = printk("%sath6kl: %pV", level, &vaf);
+	rtn = vprintk(fmt, args);
 
 	va_end(args);
 

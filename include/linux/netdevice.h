@@ -227,6 +227,22 @@ struct netdev_hw_addr_list {
 	int			count;
 };
 
+// included from v3.4.12 for ath6kl porting
+#define netdev_hw_addr_list_count(l) ((l)->count)
+#define netdev_hw_addr_list_empty(l) (netdev_hw_addr_list_count(l) == 0)
+#define netdev_hw_addr_list_for_each(ha, l) \
+	        list_for_each_entry(ha, &(l)->list, list)
+
+#define netdev_uc_count(dev) netdev_hw_addr_list_count(&(dev)->uc)
+#define netdev_uc_empty(dev) netdev_hw_addr_list_empty(&(dev)->uc)
+#define netdev_for_each_uc_addr(ha, dev) \
+	        netdev_hw_addr_list_for_each(ha, &(dev)->uc)
+
+#define netdev_mc_count(dev) netdev_hw_addr_list_count(&(dev)->mc)
+#define netdev_mc_empty(dev) netdev_hw_addr_list_empty(&(dev)->mc)
+#define netdev_for_each_mc_addr(ha, dev) \
+	        netdev_hw_addr_list_for_each(ha, &(dev)->mc)
+
 struct hh_cache
 {
 	struct hh_cache *hh_next;	/* Next entry			     */

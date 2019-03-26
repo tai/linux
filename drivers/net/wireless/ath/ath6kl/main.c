@@ -1048,6 +1048,7 @@ static struct net_device_stats *ath6kl_get_stats(struct net_device *dev)
 	return &vif->net_stats;
 }
 
+#if 0
 static int ath6kl_set_features(struct net_device *dev,
 			       netdev_features_t features)
 {
@@ -1080,13 +1081,15 @@ static int ath6kl_set_features(struct net_device *dev,
 
 	return err;
 }
+#endif
 
 static void ath6kl_set_multicast_list(struct net_device *ndev)
 {
 	struct ath6kl_vif *vif = netdev_priv(ndev);
 	bool mc_all_on = false, mc_all_off = false;
-	int mc_count = netdev_mc_count(ndev);
-	struct netdev_hw_addr *ha;
+	int mc_count = ndev->mc_count;
+	struct dev_addr_list *da;
+	int nr;
 	bool found;
 	struct ath6kl_mc_filter *mc_filter, *tmp;
 	struct list_head mc_filter_new;
@@ -1115,9 +1118,11 @@ static void ath6kl_set_multicast_list(struct net_device *ndev)
 	}
 
 	list_for_each_entry_safe(mc_filter, tmp, &vif->mc_filter, list) {
+		struct dev_addr_list *da;
+		int nr = ndev->mc_count;
 		found = false;
-		netdev_for_each_mc_addr(ha, ndev) {
-			if (memcmp(ha->addr, mc_filter->hw_addr,
+		for (da = ndev->mc_list; nr--; da = da->next) {
+			if (memcmp(da->da_addr, mc_filter->hw_addr,
 				   ATH6KL_MCAST_FILTER_MAC_ADDR_SIZE) == 0) {
 				found = true;
 				break;
@@ -1148,10 +1153,11 @@ static void ath6kl_set_multicast_list(struct net_device *ndev)
 
 	INIT_LIST_HEAD(&mc_filter_new);
 
-	netdev_for_each_mc_addr(ha, ndev) {
+	nr = ndev->mc_count;
+	for (da = ndev->mc_list; nr--; da = da->next) {
 		found = false;
 		list_for_each_entry(mc_filter, &vif->mc_filter, list) {
-			if (memcmp(ha->addr, mc_filter->hw_addr,
+			if (memcmp(da->da_addr, mc_filter->hw_addr,
 				   ATH6KL_MCAST_FILTER_MAC_ADDR_SIZE) == 0) {
 				found = true;
 				break;
@@ -1166,7 +1172,7 @@ static void ath6kl_set_multicast_list(struct net_device *ndev)
 				goto out;
 			}
 
-			memcpy(mc_filter->hw_addr, ha->addr,
+			memcpy(mc_filter->hw_addr, da->da_addr,
 			       ATH6KL_MCAST_FILTER_MAC_ADDR_SIZE);
 			/* Set the multicast filter */
 			ath6kl_dbg(ATH6KL_DBG_TRC,
@@ -1195,7 +1201,7 @@ static const struct net_device_ops ath6kl_netdev_ops = {
 	.ndo_stop               = ath6kl_close,
 	.ndo_start_xmit         = ath6kl_data_tx,
 	.ndo_get_stats          = ath6kl_get_stats,
-	.ndo_set_features       = ath6kl_set_features,
+//	.ndo_set_features       = ath6kl_set_features,
 	.ndo_set_rx_mode	= ath6kl_set_multicast_list,
 };
 
@@ -1210,7 +1216,7 @@ void init_netdev(struct net_device *dev)
 				sizeof(struct wmi_data_hdr) + HTC_HDR_LENGTH
 				+ WMI_MAX_TX_META_SZ + ATH6KL_HTC_ALIGN_BYTES;
 
-	dev->hw_features |= NETIF_F_IP_CSUM | NETIF_F_RXCSUM;
+//	dev->hw_features |= NETIF_F_IP_CSUM | NETIF_F_RXCSUM;
 
 	return;
 }

@@ -23,6 +23,13 @@
 #include <linux/mmc/sdio_ids.h>
 #include <linux/mmc/sdio.h>
 #include <linux/mmc/sd.h>
+
+// from v3.4.113:linux/mmc/pm.h
+typedef unsigned int mmc_pm_flag_t;
+#define MMC_PM_KEEP_POWER       (1 << 0)
+#define MMC_PM_WAKE_SDIO_IRQ    (1 << 1)
+// END: from v3.4.113:linux/mmc/pm.h
+
 #include "hif.h"
 #include "hif-ops.h"
 #include "target.h"
@@ -814,7 +821,7 @@ static int ath6kl_set_sdio_pm_caps(struct ath6kl *ar)
 	mmc_pm_flag_t flags;
 	int ret;
 
-	flags = sdio_get_host_pm_caps(func);
+	flags = 0; // sdio_get_host_pm_caps(func);
 
 	ath6kl_dbg(ATH6KL_DBG_SUSPEND, "sdio suspend pm_caps 0x%x\n", flags);
 
@@ -822,14 +829,14 @@ static int ath6kl_set_sdio_pm_caps(struct ath6kl *ar)
 	    !(flags & MMC_PM_KEEP_POWER))
 		return -EINVAL;
 
-	ret = sdio_set_host_pm_flags(func, MMC_PM_KEEP_POWER);
+	ret = 0; // sdio_set_host_pm_flags(func, MMC_PM_KEEP_POWER);
 	if (ret) {
 		ath6kl_err("set sdio keep pwr flag failed: %d\n", ret);
 		return ret;
 	}
 
 	/* sdio irq wakes up host */
-	ret = sdio_set_host_pm_flags(func, MMC_PM_WAKE_SDIO_IRQ);
+	ret = 0; // sdio_set_host_pm_flags(func, MMC_PM_WAKE_SDIO_IRQ);
 	if (ret)
 		ath6kl_err("set sdio wake irq flag failed: %d\n", ret);
 
@@ -885,11 +892,11 @@ static int ath6kl_sdio_suspend(struct ath6kl *ar, struct cfg80211_wowlan *wow)
 	if (ar->suspend_mode == WLAN_POWER_STATE_DEEP_SLEEP ||
 	    !ar->suspend_mode || try_deepsleep) {
 
-		flags = sdio_get_host_pm_caps(func);
+		flags = 0; // sdio_get_host_pm_caps(func);
 		if (!(flags & MMC_PM_KEEP_POWER))
 			goto cut_pwr;
 
-		ret = sdio_set_host_pm_flags(func, MMC_PM_KEEP_POWER);
+		ret = 0; // sdio_set_host_pm_flags(func, MMC_PM_KEEP_POWER);
 		if (ret)
 			goto cut_pwr;
 
@@ -900,8 +907,7 @@ static int ath6kl_sdio_suspend(struct ath6kl *ar, struct cfg80211_wowlan *wow)
 		 * TCXO shutdown properly.
 		 */
 		if ((flags & MMC_PM_WAKE_SDIO_IRQ)) {
-			ret = sdio_set_host_pm_flags(func,
-						MMC_PM_WAKE_SDIO_IRQ);
+			ret = 0; // sdio_set_host_pm_flags(func, MMC_PM_WAKE_SDIO_IRQ);
 			if (ret)
 				goto cut_pwr;
 		}

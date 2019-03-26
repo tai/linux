@@ -19,7 +19,14 @@
 #include <linux/moduleparam.h>
 #include <linux/errno.h>
 #include <linux/export.h>
+#if 0
 #include <linux/of.h>
+#else
+struct device_node;
+extern const void *of_get_property(const struct device_node *node,
+				   const char *name,
+				   int *lenp);
+#endif
 #include <linux/mmc/sdio_func.h>
 
 #include "core.h"

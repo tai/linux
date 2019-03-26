@@ -1909,7 +1909,7 @@ static int ath6kl_wow_sta(struct ath6kl *ar, struct ath6kl_vif *vif)
 	 * SSDP 239.255.255.250 and LLMNR 224.0.0.252
 	 */
 	if ((ndev->flags & IFF_ALLMULTI) ||
-	    (ndev->flags & IFF_MULTICAST && netdev_mc_count(ndev) > 0)) {
+	    (ndev->flags & IFF_MULTICAST && ndev->mc_count > 0)) {
 		ret = ath6kl_wmi_add_wow_pattern_cmd(ar->wmi,
 				vif->fw_vif_idx, WOW_LIST_ID,
 				sizeof(discvr_pattern), discvr_offset,
