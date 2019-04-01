@@ -23,135 +23,85 @@
 
 #define NAND_DEFAULT_BLOCK_SIZE		SZ_128K
 
-#ifdef CONFIG_CELESTIAL_TIGA_MINI
 static struct mtd_partition cnc_nand_partitions[] = {
 	{
-		.name		= "cavm_miniloader",
+		.name		= "miniloader",
 		.offset		= 0,
 		.size		= SZ_128K,
-		.mask_flags	= MTD_WRITEABLE,/*Read only*/
+		.mask_flags	= MTD_WRITEABLE,
 	}, {
-		.name		= "cavm_uboot1",
+		.name		= "u-boot1",
 		.offset		= MTDPART_OFS_APPEND,
 		.size		= SZ_512K,
-		.mask_flags	= MTD_WRITEABLE,/*Read only*/
+		.mask_flags	= 0,/*Read only*/
 	}, {
-		.name		= "cavm_uboot1_pad",
+		.name		= "u-boot2",
 		.offset		= MTDPART_OFS_APPEND,
 		.size		= SZ_512K,
 		.mask_flags	= 0,
 	}, {
-		.name		= "cavm_nvram_factory",
+		.name		= "nvram_factory",
 		.offset		= MTDPART_OFS_APPEND,
 		.size		= SZ_128K,
-		.mask_flags	= MTD_WRITEABLE,/*Read only*/
+		.mask_flags	= 0,/*Read only*/
 	}, {
-		.name		= "cavm_nvram_factory_pad",
+		.name		= "marlin",
 		.offset		= MTDPART_OFS_APPEND,
-		.size		= SZ_128K,
-		.mask_flags	= MTD_WRITEABLE,/*Read only*/
+		.size		= SZ_256K,
+		.mask_flags	= MTD_WRITEABLE,
 	}, {
-		.name		= "cavm_nvram1b",
-		.offset		= MTDPART_OFS_APPEND,
-		.size		= SZ_128K,
-		.mask_flags	= MTD_WRITEABLE,/*Read only*/
-	}, {
-		.name		= "cavm_nvram2",
+		.name		= "factory_hdr",
 		.offset		= MTDPART_OFS_APPEND,
 		.size		= SZ_128K,
 		.mask_flags	= 0,
 	}, {
-		.name		= "cavm_nvram2b",
+		.name		= "factory_bak_hdr",
 		.offset		= MTDPART_OFS_APPEND,
 		.size		= SZ_128K,
 		.mask_flags	= 0,
 	}, {
-		.name		= "cavm_splash",
+		.name		= "kernel_hdr",
+		.offset		= MTDPART_OFS_APPEND,
+		.size		= SZ_256K,
+		.mask_flags	= 0,
+	}, {
+		.name		= "splash",
 		.offset		= MTDPART_OFS_APPEND,
 		.size		= SZ_2M,
 		.mask_flags	= 0,
 	}, {
-		.name		= "cavm_all_img1_info",
-		.offset		= MTDPART_OFS_APPEND,
-		.size		= SZ_128K,
-		.mask_flags	= MTD_WRITEABLE,/*Read only*/
-	}, {
-		.name		= "cavm_all_img1_info_pad",
-		.offset		= MTDPART_OFS_APPEND,
-		.size		= SZ_128K,
-		.mask_flags	= MTD_WRITEABLE,/*Read only*/
-	}, {
-		.name		= "cavm_netHD_Image1",
+		.name		= "factory",
 		.offset		= MTDPART_OFS_APPEND,
 		.size		= SZ_32M,
-		.mask_flags	= MTD_WRITEABLE,/*Read only*/
-	}, {
-		.name		= "cavm_netHD_Image2",
-		.offset		= MTDPART_OFS_APPEND,
-		.size		= SZ_32M,
-		.mask_flags	= 0,
-	}, {
-		.name		= "cavm_free1",
-		.offset		= MTDPART_OFS_APPEND,
-		.size		= SZ_16M + SZ_2M + SZ_1M + SZ_512K,  /* 19.5M */
-		.mask_flags	= 0,
-	}, {
-		.name		= "cavm_free1_pad",
-		.offset		= MTDPART_OFS_APPEND,
-		.size		= SZ_256K,
-		.mask_flags	= 0,
-	}, {
-		.name		= "cavm_netHD_img2_info",
-		.offset		= MTDPART_OFS_APPEND,
-		.size		= SZ_256K,
-		.mask_flags	= 0,
-	}, {
-		.name		= "cavm_blob",
-		.offset		= MTDPART_OFS_APPEND,
-		.size		= SZ_4M - SZ_1M,
-		.mask_flags	= MTD_WRITEABLE,/*Read only*/
-	}, {
-		.name		= "cavm_uboot2",
-		.offset		= MTDPART_OFS_APPEND,
-		.size		= SZ_1M,
-#ifdef UBOOT_UPGRADE_ALLOWED		
-		.mask_flags	= 0,
-#else
-		.mask_flags	= MTD_WRITEABLE,/*Read only*/
-#endif
-	}, {
-		.name		= "cavm_ffs",
-		.offset		= MTDPART_OFS_APPEND,
-		.size		= SZ_32M,
-		.mask_flags	= 0,
-	}, {
-		.name		= "customer_area",
-		.offset		= MTDPART_OFS_APPEND,
-		.size		= SZ_4M, //MTDPART_SIZ_FULL,
-		.mask_flags	= 0,
-	}
-};
-#else
-static struct mtd_partition cnc_nand_partitions[] = {
-	{
-		.name		= "u-boot",
-		.offset		= 0,
-		.size		= 30 * NAND_DEFAULT_BLOCK_SIZE,
 		.mask_flags	= 0,
 	}, {
 		.name		= "kernel",
 		.offset		= MTDPART_OFS_APPEND,
-		.size		= SZ_4M,
+		.size		= SZ_32M,
 		.mask_flags	= 0,
 	}, {
 		.name		= "filesystem",
 		.offset		= MTDPART_OFS_APPEND,
+		.size		= SZ_48M + SZ_8M + SZ_512K,
+		.mask_flags	= 0,
+	}, {
+		.name		= "blob",
+		.offset		= MTDPART_OFS_APPEND,
+		.size		= SZ_2M + SZ_1M,
+		.mask_flags	= MTD_WRITEABLE,
+	}, {
+		.name		= "reserve",
+		.offset		= MTDPART_OFS_APPEND,
 		.size		= MTDPART_SIZ_FULL,
 		.mask_flags	= 0,
+	}, {
+		.name		= "full",
+		.offset		= 0,
+		.size		= MTDPART_SIZ_FULL,
+		.mask_flags	= MTD_WRITEABLE,
 	}
 
 };
-#endif
 
 static struct cnc_nand_pdata cnc_nand_data = {
 	.maxchip		= 1,

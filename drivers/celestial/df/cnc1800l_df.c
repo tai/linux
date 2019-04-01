@@ -1001,10 +1001,14 @@ static int cnc_tve_ioctl(unsigned int cmd, unsigned long arg, unsigned int minor
 #ifndef CONFIG_CELESTIAL_TIGA_MINI
 				clock_dispset_dac1mode(_clock_wake);
 #endif
+				clock_tms_clockena(1);
+				mdelay(10);
+				clock_hdmi_reset(_do_reset);
+				mdelay(30);
 				clock_hdmi_reset(_do_set);
 			}
 			else if(tveid == 1){
-#ifndef CONFIG_HD2SD_ENABLE
+#ifdef CONFIG_HD2SD_ENABLE
 				clock_dispset_dac0mode(_clock_wake);
 #else
 				;
@@ -1019,10 +1023,11 @@ static int cnc_tve_ioctl(unsigned int cmd, unsigned long arg, unsigned int minor
 #ifndef CONFIG_CELESTIAL_TIGA_MINI
 				clock_dispset_dac1mode(_clock_sleep);
 #endif
-				clock_hdmi_reset(_do_reset);
+				clock_tms_clockena(0);
+				//clock_hdmi_reset(_do_reset);
 			}
 			else if(tveid == 1){
-#ifndef CONFIG_HD2SD_ENABLE
+#ifdef CONFIG_HD2SD_ENABLE
 				clock_dispset_dac0mode(_clock_sleep);
 #else
 				;
@@ -1041,7 +1046,7 @@ static int cnc_tve_ioctl(unsigned int cmd, unsigned long arg, unsigned int minor
 				int i = 0;
 				int wait_times = 10;
 				if(__Is_first){
-#ifndef CONFIG_HD2SD_ENABLE
+#ifdef CONFIG_HD2SD_ENABLE
 					clock_dispset_dac0mode(_clock_wake);
 #endif
 #ifndef CONFIG_CELESTIAL_TIGA_MINI
@@ -1110,7 +1115,7 @@ static int cnc_tve_ioctl(unsigned int cmd, unsigned long arg, unsigned int minor
 
 				__df_calc_video_position(df_dev[minor_id].tve_format,arg,&pos);
 				df_dev[minor_id].tve_format = arg;
-				outputmode = arg; // fix a bug: user space mutilp call CSTVOUT_Open will casue CSTVOUT_SetMode failed.
+				outputmode = -1; // fix a bug: user space mutilp call CSTVOUT_Open will casue CSTVOUT_SetMode failed.
 
 				if(tveid == 0){
 					changemode_ack = __video_read(HAND_SHAKE_WITH_VIDEO_FIRMWARE);
@@ -1211,7 +1216,7 @@ static int cnc_tve_ioctl(unsigned int cmd, unsigned long arg, unsigned int minor
 						}
 					}
 					else if(tveid == 1){
-#ifndef CONFIG_HD2SD_ENABLE
+#ifdef CONFIG_HD2SD_ENABLE
 						InitTVE1Raw(df_dev[minor_id].tve_format, __Is_ColorBar);
 #else
 						;
@@ -1315,7 +1320,7 @@ static int cnc_tve_ioctl(unsigned int cmd, unsigned long arg, unsigned int minor
 					DFSetOutIFVideoFmt(1, tve_2_df[df_dev[minor_id+1].tve_format]);
 					__df_update_end();
 					mdelay(10);
-#ifndef CONFIG_HD2SD_ENABLE
+#ifdef CONFIG_HD2SD_ENABLE
 					InitTVE1Raw(df_dev[minor_id+1].tve_format, __Is_ColorBar);
 #endif
 					mdelay(10);

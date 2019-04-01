@@ -39,7 +39,6 @@
 #define        CRYPTO_MEM_SIZE        0x300000
 #define        CRYPTO_MEM_REGION      (ETHERNET_REGION - CRYPTO_MEM_SIZE)
 
-
 #ifdef CONFIG_HD2SD_ENABLE
 #define        HD2SD_DATA_SIZE        (0x5a0000)
 #else
@@ -66,11 +65,12 @@
 #define        VIDEO_CPB_DIR_SIZE     (CONFIG_VIDEO_CPB_SIZE/0x100 * VIDEO_NUM)
 #define        VIDEO_CPB_DIR_REGION   (VIDEO_CPB_REGION - VIDEO_CPB_DIR_SIZE)
 #ifdef CONFIG_CELESTIAL_TIGA_MINI
-#define        VIDEO_USER_DATA_SIZE   (0)
+#define        VIDEO_USER_DATA_SIZE   (0x0)
 #else
 #define        VIDEO_USER_DATA_SIZE   (0x80000 * VIDEO_NUM)
 #endif  // CONFIG_CELESTIAL_TIGA_MINI
 #define        VIDEO_USER_DATA_REGION (VIDEO_CPB_DIR_REGION - VIDEO_USER_DATA_SIZE)
+
 
 #ifdef CONFIG_AUDIO_NUM
 #define        AUDIO_NUM		CONFIG_AUDIO_NUM
@@ -86,22 +86,21 @@
 #define        AUDIO_PTS_SIZE	(0x3000* AUDIO_NUM)
 #define        AUDIO_PTS_REGION	(AUDIO_CAB_REGION - AUDIO_PTS_SIZE)
 #ifdef CONFIG_CELESTIAL_TIGA_MINI
-#define        AUDIO_MIX_SIZE	(0)
+#define        AUDIO_MIX_SIZE	(0x0)
 #else
 #define        AUDIO_MIX_SIZE	(0x40000)
 #endif  // CONFIG_CELESTIAL_TIGA_MINI
 #define        AUDIO_MIX_REGION	(AUDIO_PTS_REGION - AUDIO_MIX_SIZE)
 
-#define        AUDIO_STUFF_SIZE       (0x200000)
+#define        AUDIO_STUFF_SIZE       (0x280000)
 #define        AUDIO_STUFF_REGION     (AUDIO_MIX_REGION - AUDIO_STUFF_SIZE)
-
 #ifdef CONFIG_CELESTIAL_XPORT
 #define        XPORT_SIZE             (0xd00000)
 #else
 #define        XPORT_SIZE             (0)
 #endif // CONFIG_CELESTIAL_XPORT
 
-#define        XPORT_REGION           (AUDIO_STUFF_REGION-XPORT_SIZE)
+#define        XPORT_REGION           (AUDIO_STUFF_REGION - XPORT_SIZE)
 
 #elif (CONFIG_CELESTIAL_MEM_SIZE == 128) // setting to 128MB of Memory size
 

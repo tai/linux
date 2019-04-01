@@ -785,7 +785,7 @@ static int erase_sector(u32 offset)
 	spi_write(spi, baudr,  DEF_R_SPEED ); 
 	spi_write(spi, ssienr, 0x1         ); 
 
-	spi_write(spi, dr,     flash->erase_opcode   ); 
+	spi_write(spi, dr,     flash->erase_opcode); 
 	spi_write(spi, dr,     addr[2]     ); 
 	spi_write(spi, dr,     addr[1]     ); 
 	spi_write(spi, dr,     addr[0]     ); 
@@ -1035,7 +1035,6 @@ static struct flash_info __devinitdata s25f_data [] = {
         { "mx25L1006e",  0xc22011, 0, 64 * 1024,   2, SECT_4K },
 	{ "mx25l4005a",  0xc22013, 0, 64 * 1024,   8, SECT_4K },
 	{ "mx25l8006e",   0xc22014, 0, 64 * 1024,  16, SECT_4K },
-	{ "mx25l8005",   0xc22014, 0, 64 * 1024,  16, 0 },
 	{ "mx25l1606e",  0xc22015, 0, 64 * 1024,  32, SECT_4K },
 	{ "mx25l3205d",  0xc22016, 0, 64 * 1024,  64, 0 },
 	{ "mx25l6405d",  0xc22017, 0, 64 * 1024, 128, SECT_4K },
@@ -1125,7 +1124,6 @@ static struct flash_info __devinitdata s25f_data [] = {
 	{ "s25fl008a", 0x1c2017, 0, 64 * 1024, 128, },
 	{ "q0bb02b", 0x1c3017, 0, 64 * 1024, 128, },
 	{ "GD25Q80", 0xc84014, 0, 64 * 1024, 128, SECT_4K },
-	{ "GD25Q512",0xc84010, 0, 32 * 1024, 2, SECT_4K },
 };
 
 static int get_manufacture_id(unsigned char *buf, int size)
@@ -1236,61 +1234,22 @@ static struct mtd_erase_region_info erase_regions[] = {
 /*
  * Define static partitions for flash device
  */
-#ifdef CONFIG_CELESTIAL_TIGA_MINI
-#define NUM_PARTITIONS_SMALL 3
-static struct mtd_partition spi_partition_info_small[] = { /* for SPI flashes <= 64 KB */
-    { .name   = "spi_cavm_miniloader",
-      .offset = 0x0,
-      .size   = 0x0000c000 },
-   
-    { .name   = "spi_cavm_bootloader_env1",
-      .offset = 0x0000c000,
-      .size   = 0x00002000 },
-  
-    { .name   = "spi_cavm_bootloader_env2",
-      .offset = 0x0000e000,
-      .size   = 0x00002000 }
-};
-
-#define NUM_PARTITIONS 5
-static struct mtd_partition spi_partition_info_normal[] = {
-    { .name   = "spi_cavm_miniloader",
-      .offset = 0x0,
-      .size   = 0x00060000 },
-
-    { .name   = "spi_cavm_bootloader_env1",
-      .offset = 0x00060000,
-      .size   = 0x00002000 },
-
-    { .name   = "spi_cavm_free1",
-      .offset = 0x00062000,
-      .size   = 0x0000e000 },
-
-    { .name   = "spi_cavm_bootloader_env2",
-      .offset = 0x00070000,
-      .size   = 0x00002000 },
-
-    { .name   = "spi_cavm_free2",
-      .offset = 0x00072000,
-      .size   = 0x0078e000 },
-};
-#else
 #define NUM_PARTITIONS 3
 static struct mtd_partition spi_partition_info[] = {
-    { .name   = "uboot",
+    { .name   = "miniloader",
       .offset = 0x0,
-      .size   = 0xe0000 },
+      .size   = 0xc000 },
    
-    { .name   = "uboot-env",
-      .offset = 0xe0000,
-      .size   = 0x10000 },
+    { .name   = "uboot-env1",
+      .offset = 0xc000,
+      .size   = 0x2000 },
   
-    { .name   = "spi spare",
-      .offset = 0xf0000,
-      .size   = 0x10000 }
+    { .name   = "uboot-env2",
+      .offset = 0xe000,
+      .size   = 0x2000 }
 };
 #endif
-#endif
+
 #if 0
 static void do_dma_tasklet(unsigned long data)
 {
@@ -1492,20 +1451,8 @@ static int __init s25f_probe(struct platform_device *pdev)
 		}
 
 		if (nr_parts <= 0) {
-#ifdef CONFIG_CELESTIAL_TIGA_MINI
-			if (flash->mtd.size >= 0x100000) {
-				/* for SPI Flash that is at least 1 megabyte big */
-				parts = spi_partition_info_normal;
-				nr_parts = NUM_PARTITIONS;
-			} else {
-				/* for SPI Flash that is smaller than 1 megabyte */
-				nr_parts = NUM_PARTITIONS_SMALL;
-				parts = spi_partition_info_small;
-			}
-#else
 			parts = spi_partition_info;
 			nr_parts = NUM_PARTITIONS;
-#endif
 		}
 
 		if (nr_parts > 0) {
