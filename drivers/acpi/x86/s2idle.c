@@ -451,6 +451,17 @@ static const struct dmi_system_id s2idle_dmi_table[] __initconst = {
 			DMI_MATCH(DMI_PRODUCT_NAME, "ROG Flow X13 GV301"),
 		},
 	},
+	{
+		/*
+		 * ASUSTeK COMPUTER INC. ROG Flow X16 GV601RW_GV601RW
+		 * https://gitlab.freedesktop.org/drm/amd/-/issues/2148
+		 */
+		.callback = lps0_prefer_microsoft,
+		.matches = {
+			DMI_MATCH(DMI_SYS_VENDOR, "ASUSTeK COMPUTER INC."),
+			DMI_MATCH(DMI_PRODUCT_NAME, "ROG Flow X16 GV601"),
+		},
+	},
 	{}
 };
 
@@ -470,7 +481,7 @@ static int lps0_device_attach(struct acpi_device *adev,
 		for (dev_id = &amd_hid_ids[0]; dev_id->id[0]; dev_id++)
 			if (acpi_dev_hid_uid_match(adev, dev_id->id, NULL))
 				break;
-		if (dev_id)
+		if (dev_id->id[0])
 			data = (const struct amd_lps0_hid_device_data *) dev_id->driver_data;
 		else
 			data = &amd_rembrandt;
