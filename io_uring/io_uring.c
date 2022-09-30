@@ -3355,7 +3355,7 @@ static int io_uring_install_fd(struct io_ring_ctx *ctx, struct file *file)
 	if (fd < 0)
 		return fd;
 
-	ret = __io_uring_add_tctx_node(ctx, false);
+	ret = __io_uring_add_tctx_node(ctx);
 	if (ret) {
 		put_unused_fd(fd);
 		return ret;
@@ -3540,6 +3540,10 @@ static __cold int io_uring_create(unsigned entries, struct io_uring_params *p,
 		ret = -EFAULT;
 		goto err;
 	}
+
+	if (ctx->flags & IORING_SETUP_SINGLE_ISSUER
+	    && !(ctx->flags & IORING_SETUP_R_DISABLED))
+		ctx->submitter_task = get_task_struct(current);
 
 	file = io_uring_get_file(ctx);
 	if (IS_ERR(file)) {
@@ -3732,6 +3736,9 @@ static int io_register_enable_rings(struct io_ring_ctx *ctx)
 	if (!(ctx->flags & IORING_SETUP_R_DISABLED))
 		return -EBADFD;
 
+	if (ctx->flags & IORING_SETUP_SINGLE_ISSUER && !ctx->submitter_task)
+		ctx->submitter_task = get_task_struct(current);
+
 	if (ctx->restrictions.registered)
 		ctx->restricted = 1;
 
@@ -3882,6 +3889,9 @@ static int __io_uring_register(struct io_ring_ctx *ctx, unsigned opcode,
 	 */
 	if (WARN_ON_ONCE(percpu_ref_is_dying(&ctx->refs)))
 		return -ENXIO;
+
+	if (ctx->submitter_task && ctx->submitter_task != current)
+		return -EEXIST;
 
 	if (ctx->restricted) {
 		if (opcode >= IORING_REGISTER_LAST)
