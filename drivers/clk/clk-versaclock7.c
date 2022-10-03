@@ -1235,14 +1235,12 @@ err_clk:
 	return ret;
 }
 
-static int vc7_remove(struct i2c_client *client)
+static void vc7_remove(struct i2c_client *client)
 {
 	struct vc7_driver_data *vc7 = i2c_get_clientdata(client);
 
 	of_clk_del_provider(client->dev.of_node);
 	clk_unregister_fixed_rate(vc7->clk_apll.clk);
-
-	return 0;
 }
 
 static bool vc7_volatile_reg(struct device *dev, unsigned int reg)
